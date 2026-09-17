@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NTM Arcade - ระบบอัปโหลดและเล่นเกมออนไลน์ (รองรับ AR)</title>
+  
+  <!-- Tailwind CSS CDN & Custom Configuration -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            arcade: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+            },
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#7c3aed',
+              700: '#6d28d9',
+            }
+          },
+          fontFamily: {
+            sans: ['Prompt', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .chart-container {
+      position: relative;
+      width: 100%;
+      max-width: 550px;
+      margin-left: auto;
+      margin-right: auto;
+      height: 280px;
+      max-height: 350px;
+    }
+    @media (min-width: 768px) {
+      .chart-container {
+        height: 320px;
+      }
+    }
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .line-clamp-1 {
+      display: -webkit-box;
+      -webkit-line-clamp: 1;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    #game-canvas {
+      background-color: #090d16;
+      border-radius: 12px;
+      touch-action: none;
+    }
+    #game-iframe {
+      background-color: #ffffff;
+      border-radius: 12px;
+      width: 100%;
+      height: 440px;
+      border: none;
+    }
+
+    /* Fullscreen Mode Styling */
+    :fullscreen #player-viewport-container,
+    :-webkit-full-screen #player-viewport-container {
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      max-height: none !important;
+      border-radius: 0 !important;
+      background-color: #000000 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      padding: 10px !important;
+    }
+
+    :fullscreen #game-iframe,
+    :-webkit-full-screen #game-iframe {
+      height: 100% !important;
+      width: 100% !important;
+      border-radius: 0 !important;
+    }
+
+    :fullscreen #game-canvas,
+    :-webkit-full-screen #game-canvas {
+      max-height: 95vh !important;
+      max-width: 95vw !important;
+      object-fit: contain;
+    }
+
+    /* Simulated Fullscreen Fallback */
+    .simulated-fullscreen-active #modal-container-box {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      padding: 12px !important;
+      z-index: 99999 !important;
+    }
+
+    .simulated-fullscreen-active #player-viewport-container {
+      flex-grow: 1 !important;
+      height: calc(100vh - 120px) !important;
+      max-height: none !important;
+    }
+
+    .simulated-fullscreen-active #game-iframe {
+      height: 100% !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased">
+
+  <!-- Header / Navigation Bar -->
+  <header class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-xl sticky top-0 z-30 border-b border-indigo-900/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row md:items-center md:justify-between py-4 gap-4">
+        
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-2xl shadow-lg shadow-indigo-500/30">
+            🕹️
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl font-bold tracking-tight text-white">NTM Arcade</h1>
+              <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full">v3.5 AR & Chrome Ready</span>
+            </div>
+            <p class="text-xs text-indigo-200 opacity-90 leading-tight">
+              โรงเรียนวัดเนินตามาก<br>สพป. ชลบุรี เขต 2
+            </p>
+          </div>
+        </div>
+
+        <!-- Tab Controls -->
+        <nav class="flex space-x-1 overflow-x-auto pb-1 md:pb-0 custom-scrollbar border-t md:border-t-0 border-white/10 pt-2 md:pt-0">
+          <button onclick="switchTab('arcade')" id="tab-arcade" class="tab-btn active-tab px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap bg-indigo-600 text-white shadow-md">
+            <span>🎮</span> คลังเกม NTM (<span id="badge-game-count">0</span>)
+          </button>
+          <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap text-indigo-200 hover:bg-white/10 hover:text-white">
+            <span>📊</span> แดชบอร์ด & สถิติ
+          </button>
+          <button onclick="switchTab('upload')" id="tab-upload" class="tab-btn px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-1.5 whitespace-nowrap text-indigo-200 hover:bg-white/10 hover:text-white">
+            <span>🚀</span> อัปโหลดเกมใหม่
+          </button>
+        </nav>
+
+        <!-- Admin Quick Access Badge / Toggle -->
+        <div class="flex items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-white/10">
+          <button id="admin-toggle-btn" onclick="toggleAdminAuth()" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-700">
+            <span id="admin-badge-icon">🔐</span> <span id="admin-badge-text">เข้าสู่ระบบ Admin</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Toast Notification Banner -->
+    <div id="toast-notification" class="hidden mb-6 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition-all">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">✅</span>
+        <div>
+          <h4 class="font-bold text-sm text-emerald-900">แจ้งเตือนระบบ NTM Arcade</h4>
+          <p id="toast-message" class="text-xs text-emerald-700">ข้อความแจ้งเตือนระบบ</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button id="toast-play-btn" onclick="" class="hidden px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow transition-all">
+          ▶️ เปิดเล่นเกมทันที
+        </button>
+        <button onclick="hideToast()" class="text-emerald-700 hover:text-emerald-900 text-sm font-bold px-2 py-1">✕</button>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 1: ARCADE PLAY ARENA ==================== -->
+    <section id="sec-arcade" class="space-y-6">
+      
+      <!-- Section Intro Paragraph -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
+            <span>🎮</span> ศูนย์รวมเกมออนไลน์ NTM Arcade
+          </h2>
+          <p class="text-slate-600 text-sm leading-relaxed">
+            รวมเกม Canvas, HTML5 และเกมระบบ AR เล่นออนไลน์บนเบราว์เซอร์ Google Chrome ได้ทันที พร้อมระบบกล้องและเซนเซอร์เต็มรูปแบบ
+          </p>
+        </div>
+      </div>
+
+      <!-- Controls & Filter Bar -->
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <!-- Search Bar -->
+          <div class="relative flex-grow max-w-md">
+            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              🔍
+            </span>
+            <input type="text" id="searchInput" oninput="filterGames()" placeholder="ค้นหาชื่อเกม, ผู้พัฒนา, หรือคำอธิบาย..." class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all">
+          </div>
+
+          <!-- Sort Select -->
+          <div class="flex items-center gap-2">
+            <label for="sortSelect" class="text-xs font-medium text-slate-500 whitespace-nowrap">จัดเรียง:</label>
+            <select id="sortSelect" onchange="filterGames()" class="py-2.5 px-3 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="newest">อัปเดตใหม่ล่าสุด</option>
+              <option value="popular">ยอดนิยม (เล่นมากที่สุด)</option>
+              <option value="rating">คะแนนรีวิวสูงสุด</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category Filter Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar" id="category-filter-pills">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <!-- Game Cards Grid View -->
+      <div id="gameGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Empty State -->
+      <div id="empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-slate-200 border-dashed p-8">
+        <div class="text-5xl mb-3">👾</div>
+        <h3 class="font-bold text-slate-700 text-base mb-1">ไม่พบตัวเกมที่ต้องการ</h3>
+        <p class="text-xs text-slate-500 max-w-sm mx-auto mb-4">ลองปรับเปลี่ยนคำค้นหา หรือทดลองอัปโหลดเกมใหม่เข้าสู่ระบบ NTM Arcade</p>
+        <button onclick="resetFilters()" class="text-xs bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl font-medium hover:bg-indigo-100 transition-colors">
+          ล้างตัวกรองทั้งหมด
+        </button>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 2: DASHBOARD & ANALYTICS ==================== -->
+    <section id="sec-dashboard" class="hidden space-y-8">
+      
+      <!-- Section Intro Paragraph -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2">
+          <span>📊</span> แดชบอร์ดสรุปสถิติตัวเกมและการเข้าเล่น (NTM Analytics)
+        </h2>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          ภาพรวมข้อมูลเชิงสถิติของ NTM Arcade แสดงสัดส่วนประเภทเกม ยอดรวมจำนวนครั้งการเล่น สถิตินักพัฒนา และแนวโน้มความสนใจของผู้เล่น
+        </p>
+      </div>
+
+      <!-- Stat Key Cards -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">จำนวนเกมในระบบ</p>
+            <h3 id="stat-total-games" class="text-3xl font-bold text-indigo-600">0</h3>
+            <p class="text-xs text-slate-500 mt-1">เกมเปิดให้บริการ</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-2xl">
+            🎰
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">จำนวนการเล่นรวม</p>
+            <h3 id="stat-total-plays" class="text-3xl font-bold text-emerald-600">0</h3>
+            <p class="text-xs text-slate-500 mt-1">ครั้งของการเปิดเล่น</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
+            ▶️
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">นักพัฒนาเกม</p>
+            <h3 id="stat-total-devs" class="text-3xl font-bold text-purple-600">0</h3>
+            <p class="text-xs text-slate-500 mt-1">ผู้สร้างผลงานในระบบ</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl">
+            👨‍💻
+          </div>
+        </div>
+
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">คะแนนเฉลี่ย</p>
+            <h3 id="stat-avg-rating" class="text-3xl font-bold text-amber-500">0.0</h3>
+            <p class="text-xs text-slate-500 mt-1">เรตติ้งผู้ใช้งาน</p>
+          </div>
+          <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-2xl">
+            ⭐
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        <!-- Category Chart -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-slate-800 text-base">สัดส่วนเกมแบ่งตามประเภท</h3>
+                <p class="text-xs text-slate-500">จำแนกหมวดหมู่เกมที่มีใน NTM Arcade</p>
+              </div>
+              <span class="text-xs bg-indigo-50 text-indigo-700 font-medium px-2.5 py-1 rounded-full">Donut Chart</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="gameCategoryChart"></canvas>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 text-center mt-4">วางเมาส์บนกราฟเพื่อดูสัดส่วนเปอร์เซ็นต์</p>
+        </div>
+
+        <!-- Play Trend Chart -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="font-bold text-slate-800 text-base">แนวโน้มจำนวนครั้งการเล่นรายเดือน</h3>
+                <p class="text-xs text-slate-500">ปริมาณการเล่นเกมออนไลน์ผ่านเว็บ</p>
+              </div>
+              <span class="text-xs bg-emerald-50 text-emerald-700 font-medium px-2.5 py-1 rounded-full">Bar Chart</span>
+            </div>
+            <div class="chart-container">
+              <canvas id="gamePlaysTrendChart"></canvas>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 text-center mt-4">สถิติจำนวนครั้งการเข้าเล่นเรียงตามลำดับเดือน</p>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 3: UPLOAD & PUBLISH GAME ==================== -->
+    <section id="sec-upload" class="hidden space-y-6">
+      
+      <!-- Section Intro Paragraph -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2">
+          <span>🚀</span> อัปโหลดและเผยแพร่ตัวเกมใหม่ลง NTM Arcade
+        </h2>
+        <p class="text-slate-600 text-sm leading-relaxed">
+          คุณสามารถนำไฟล์เกม HTML5 (.html) และเกม AR ที่ใช้กล้องถ่ายภาพ อัปโหลดเข้ามาในระบบเพื่อจัดเก็บและเปิดให้เล่นออนไลน์ได้ทันที
+        </p>
+      </div>
+
+      <div class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/80">
+        <form id="gameUploadForm" onsubmit="handleGameUploadSubmit(event)" class="space-y-6">
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Game Title -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                ชื่อเกม (Game Title) <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" id="form-title" required placeholder="เช่น Cyber Snake 2099" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+            </div>
+
+            <!-- Developer Name -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                ชื่อผู้พัฒนา / ทีมพัฒนา <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" id="form-developer" required placeholder="เช่น NTM Studio" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Game Category -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                หมวดหมู่เกม <span class="text-rose-500">*</span>
+              </label>
+              <select id="form-category" required class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                <option value="AR / Camera">AR / WebXR (เกมกล้อง AR)</option>
+                <option value="Arcade">Arcade (คลาสสิก/อาร์เคด)</option>
+                <option value="Action">Action (แอคชั่น/ยิงกระจาย)</option>
+                <option value="Puzzle">Puzzle (ปริศนา/ฝึกสมอง)</option>
+                <option value="Sci-Fi">Sci-Fi / Space (ไซไฟ/อวกาศ)</option>
+                <option value="Casual">Casual (เล่นเพลินๆ)</option>
+              </select>
+            </div>
+
+            <!-- Game Engine / Format -->
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                รูปแบบเกม / Game Engine <span class="text-rose-500">*</span>
+              </label>
+              <select id="form-engine" required class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                <option value="AR.js / MindAR">AR.js / MindAR (WebAR)</option>
+                <option value="HTML5 Single File">HTML5 Web File (.html)</option>
+                <option value="WebGL">Unity WebGL / Godot HTML5</option>
+                <option value="Construct 3">Construct 3 Web Export</option>
+                <option value="Scratch Embed">Scratch / Frame Embed</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Cover Image Upload Zone -->
+          <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              🖼️ ภาพหน้าปกเกม (Game Cover Image)
+            </label>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+              <!-- Upload Box -->
+              <div class="sm:col-span-2 border-2 border-dashed border-purple-200 bg-purple-50/40 rounded-xl p-4 text-center hover:bg-purple-50 hover:border-purple-400 transition-all cursor-pointer" onclick="document.getElementById('form-cover-file').click()">
+                <input type="file" id="form-cover-file" accept="image/*" class="hidden" onchange="handleCoverUploadChange(this)">
+                <div class="text-2xl mb-1">🖼️</div>
+                <p id="cover-file-label-text" class="text-xs text-purple-950 font-medium">อัปโหลดไฟล์ภาพหน้าปก (.png, .jpg, .webp)</p>
+                <p class="text-[11px] text-purple-500 mt-0.5">อัตราส่วนแนะนำ 16:9</p>
+              </div>
+
+              <!-- Preview Thumbnail Box -->
+              <div class="flex flex-col items-center justify-center">
+                <span class="text-[11px] text-slate-400 mb-1">ตัวอย่างหน้าปก</span>
+                <div id="cover-preview-container" class="w-full h-24 bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-300 shadow-inner">
+                  <span id="cover-preview-placeholder" class="text-slate-500 text-xs">ยังไม่มีหน้าปก</span>
+                  <img id="cover-preview-img" class="w-full h-full object-cover hidden" alt="Cover Preview" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <input type="url" id="form-cover-url" oninput="handleCoverUrlInput(this.value)" placeholder="หรือระบุ URL รูปภาพภายนอก https://example.com/cover.jpg" class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+              คำอธิบายเกม & วิธีการควบคุม (Controls & Description)
+            </label>
+            <textarea id="form-description" rows="3" placeholder="ระบุเนื้อหาเกมสั้นๆ พร้อมปุ่มควบคุม..." class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
+          </div>
+
+          <!-- Game Source Zone (Modified for Raw Code Input) -->
+          <div class="space-y-3">
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+              วิธีการนำเข้าตัวเกม (Game Source) <span class="text-rose-500">*</span>
+            </label>
+            
+            <!-- Source Toggle -->
+            <div class="flex bg-slate-100 p-1 rounded-xl">
+              <button type="button" id="btn-src-file" onclick="toggleGameSource('file')" class="flex-1 py-1.5 text-xs font-bold rounded-lg bg-white shadow-sm text-indigo-600 transition-all">📂 อัปโหลดไฟล์</button>
+              <button type="button" id="btn-src-code" onclick="toggleGameSource('code')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all">💻 วางซอร์สโค้ด</button>
+              <button type="button" id="btn-src-url" onclick="toggleGameSource('url')" class="flex-1 py-1.5 text-xs font-bold rounded-lg text-slate-500 hover:text-slate-700 transition-all">🔗 ฝังลิงก์ URL</button>
+            </div>
+
+            <!-- 1. File Upload Zone -->
+            <div id="zone-src-file" class="border-2 border-dashed border-indigo-200 bg-indigo-50/40 rounded-2xl p-6 text-center hover:bg-indigo-50 hover:border-indigo-400 transition-all cursor-pointer block" onclick="document.getElementById('form-file').click()">
+              <input type="file" id="form-file" accept=".html,.htm,.txt" class="hidden" onchange="handleFileUploadChange(this)">
+              <div class="text-4xl mb-2">📦</div>
+              <p id="file-label-text" class="text-sm text-indigo-950 font-medium">คลิกเลือกไฟล์ตัวเกม HTML5 หรือ AR (.html)</p>
+              <p class="text-xs text-indigo-500 mt-1">รองรับระบบขยายเต็มหน้าจอ และเซนเซอร์กล้อง</p>
+            </div>
+
+            <!-- 2. Raw Code Zone -->
+            <div id="zone-src-code" class="hidden">
+              <textarea id="form-raw-code" rows="8" placeholder="<!DOCTYPE html>&#10;<html>&#10;<head>...</head>&#10;<body>&#10;  <script>/* วางโค้ดเกมของคุณที่นี่ */</script>&#10;</body>&#10;</html>" class="w-full px-4 py-3 text-xs font-mono bg-slate-900 text-emerald-400 border border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all custom-scrollbar" spellcheck="false"></textarea>
+              <p class="text-[10px] text-slate-500 mt-1">วางซอร์สโค้ด HTML, CSS, JavaScript ที่เขียนรวมในไฟล์เดียวกัน (Single File) ลงในช่องนี้</p>
+            </div>
+
+            <!-- 3. External URL Zone -->
+            <div id="zone-src-url" class="hidden">
+              <input type="url" id="form-url" placeholder="https://example.com/my-ar-game" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+              <p class="text-[10px] text-slate-500 mt-1">ใช้สำหรับฝังตัวเกมจากเซิร์ฟเวอร์ภายนอก (Iframe)</p>
+            </div>
+            
+            <input type="hidden" id="active-source-type" value="file">
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
+            <button type="button" onclick="resetGameForm()" class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-all">
+              ล้างข้อมูล
+            </button>
+            <button type="submit" id="btn-save-game" class="px-7 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium shadow-md shadow-indigo-200 transition-all flex items-center gap-2">
+              <span>🚀</span> เผยแพร่เกมลง NTM Arcade
+            </button>
+          </div>
+
+        </form>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Admin Authentication Modal -->
+  <div id="admin-login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 relative">
+      <button onclick="closeAdminLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      
+      <div class="text-center mb-5">
+        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-2">
+          🔑
+        </div>
+        <h3 class="font-bold text-slate-800 text-base">เข้าสู่ระบบผู้ดูแล (Admin)</h3>
+        <p class="text-xs text-slate-500 mt-0.5">กรอกรหัสผ่านเพื่อสิทธิ์ในการแก้ไขและลบเกม</p>
+      </div>
+
+      <form onsubmit="handleAdminLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่านผู้ดูแล (PIN)</label>
+          <input type="password" id="admin-pass-input" required placeholder="กรอกรหัสผ่านผู้ดูแล" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-center font-mono tracking-widest">
+        </div>
+
+        <p id="admin-login-error" class="text-xs text-rose-500 font-medium text-center hidden">
+          ⚠️ รหัสผ่านไม่ถูกต้อง
+        </p>
+
+        <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+          ยืนยันรหัสผ่าน
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Custom Delete Confirmation Modal -->
+  <div id="delete-confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center relative">
+      <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-3">
+        🗑️
+      </div>
+      <h3 class="font-bold text-slate-800 text-base mb-1">ยืนยันการลบตัวเกม</h3>
+      <p id="delete-target-title" class="text-xs text-slate-500 mb-5">คุณแน่ใจหรือไม่ที่จะลบเกมนี้ออกจากระบบ?</p>
+
+      <div class="flex items-center gap-3">
+        <button onclick="closeDeleteModal()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-all">
+          ยกเลิก
+        </button>
+        <button id="btn-confirm-delete" onclick="" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-md transition-all">
+          ยืนยันลบเกม
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Edit Game Modal -->
+  <div id="admin-edit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 relative my-8">
+      <button onclick="closeAdminEditModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-lg">✕</button>
+      
+      <div class="flex items-center gap-3 mb-5 border-b border-slate-100 pb-4">
+        <div class="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
+          ✏️
+        </div>
+        <div>
+          <h3 class="font-bold text-slate-800 text-base">แก้ไขข้อมูลและภาพหน้าปกเกม</h3>
+          <p class="text-xs text-slate-500">ปรับแต่งรายละเอียดของตัวเกมใน NTM Arcade</p>
+        </div>
+      </div>
+
+      <form onsubmit="handleSaveEditedGame(event)" class="space-y-4">
+        <input type="hidden" id="edit-game-id">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อเกม</label>
+            <input type="text" id="edit-title" required class="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">ผู้พัฒนา</label>
+            <input type="text" id="edit-developer" required class="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">หมวดหมู่</label>
+            <select id="edit-category" required class="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="AR / Camera">AR / WebXR</option>
+              <option value="Arcade">Arcade</option>
+              <option value="Action">Action</option>
+              <option value="Puzzle">Puzzle</option>
+              <option value="Sci-Fi">Sci-Fi</option>
+              <option value="Casual">Casual</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1">Game Engine</label>
+            <select id="edit-engine" required class="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <option value="AR.js / MindAR">AR.js / MindAR</option>
+              <option value="HTML5 Canvas">HTML5 Canvas</option>
+              <option value="HTML5 Single File">HTML5 Single File</option>
+              <option value="WebGL">WebGL</option>
+              <option value="Construct 3">Construct 3</option>
+              <option value="Scratch Embed">Scratch Embed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Admin Cover Image Upload & URL Zone -->
+        <div class="space-y-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+          <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+            🖼️ ภาพหน้าปกเกม (Game Cover Image)
+          </label>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-center">
+            <!-- Upload Box -->
+            <div class="sm:col-span-2 border-2 border-dashed border-purple-200 bg-purple-50/40 rounded-xl p-3 text-center hover:bg-purple-50 hover:border-purple-400 transition-all cursor-pointer" onclick="document.getElementById('edit-cover-file').click()">
+              <input type="file" id="edit-cover-file" accept="image/*" class="hidden" onchange="handleEditCoverUploadChange(this)">
+              <div class="text-xl mb-1">🖼️</div>
+              <p id="edit-cover-file-label" class="text-xs text-purple-950 font-medium">คลิกเลือกอัปโหลดไฟล์รูปภาพหน้าปกใหม่</p>
+              <p class="text-[10px] text-purple-500 mt-0.5">.png, .jpg, .webp (อัตราส่วนแนะนำ 16:9)</p>
+            </div>
+
+            <!-- Preview Thumbnail Box -->
+            <div class="flex flex-col items-center justify-center">
+              <span class="text-[10px] text-slate-400 mb-1">หน้าปกปัจจุบัน / ตัวอย่าง</span>
+              <div class="w-full h-20 bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-300 shadow-inner">
+                <span id="edit-cover-preview-placeholder" class="text-slate-500 text-xs hidden">ไม่มีหน้าปก</span>
+                <img id="edit-cover-preview-img" class="w-full h-full object-cover" alt="Cover Preview" />
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <input type="url" id="edit-cover-url" oninput="handleEditCoverUrlInput(this.value)" placeholder="หรือระบุ URL รูปภาพภายนอก https://example.com/cover.jpg" class="w-full px-3.5 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">คำอธิบาย</label>
+          <textarea id="edit-description" rows="3" class="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">URL ฝังภายนอก (ถ้ามี)</label>
+          <input type="url" id="edit-url" placeholder="https://..." class="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+          <button type="button" onclick="closeAdminEditModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50">
+            ยกเลิก
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md">
+            💾 บันทึกการเปลี่ยนแปลง
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Interactive Universal Game Player with Fullscreen & AR Camera Capability -->
+  <div id="game-player-modal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-3 sm:p-5">
+    <div id="modal-container-box" class="bg-slate-900 rounded-3xl max-w-4xl w-full p-4 sm:p-6 shadow-2xl border border-slate-700/80 relative flex flex-col items-center transition-all duration-300">
+      
+      <!-- Top Action Controls: Fullscreen & Close -->
+      <div class="absolute top-4 right-4 flex items-center gap-2 z-20">
+        <!-- Copy Chrome Direct Link Button -->
+        <button id="btn-copy-link-modal" onclick="copyActiveGameDirectLink()" title="คัดลอกลิงก์ตรงสำหรับ Chrome" class="px-3 py-1.5 rounded-xl bg-indigo-900/80 text-indigo-200 hover:bg-indigo-600 hover:text-white flex items-center gap-1.5 text-xs font-bold transition-all border border-indigo-700">
+          <span>🔗</span> <span class="hidden sm:inline">คัดลอกลิงก์ Chrome</span>
+        </button>
+        
+        <!-- Fullscreen Toggle Button -->
+        <button id="btn-fullscreen-top" onclick="toggleFullscreen()" title="ขยายเต็มหน้าจอ" class="px-3 py-1.5 rounded-xl bg-slate-800 text-indigo-400 hover:bg-indigo-600 hover:text-white flex items-center gap-1.5 text-xs font-bold transition-all border border-slate-700">
+          <span>⛶</span> <span class="hidden sm:inline">เต็มจอ</span>
+        </button>
+
+        <!-- Close Button -->
+        <button onclick="closeGameModal()" title="ปิดหน้าต่าง" class="w-9 h-9 rounded-full bg-slate-800 text-slate-300 hover:bg-rose-600 hover:text-white flex items-center justify-center font-bold text-base transition-all border border-slate-700">
+          ✕
+        </button>
+      </div>
+
+      <!-- Game Header Info -->
+      <div class="w-full mb-3 flex items-center justify-between pr-36 sm:pr-56">
+        <div>
+          <div class="flex items-center gap-2">
+            <span id="player-game-category" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Category</span>
+            <span id="player-game-engine" class="text-xs text-slate-400">Engine</span>
+          </div>
+          <h3 id="player-game-title" class="text-lg sm:text-xl font-bold text-white mt-0.5">Title</h3>
+        </div>
+        <div class="text-right hidden sm:block">
+          <p class="text-[11px] text-slate-400">สถานะตัวเล่น</p>
+          <p id="player-game-score" class="text-base sm:text-lg font-mono font-bold text-emerald-400">พร้อมเล่น</p>
+        </div>
+      </div>
+
+      <!-- AR Camera Notice Banner (Shown dynamically when playing AR games) -->
+      <div id="ar-camera-notice" class="hidden w-full mb-2 p-2.5 bg-amber-950/80 border border-amber-500/40 rounded-xl text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <span class="flex items-center gap-2">
+          <span>📷</span> <span><strong>โหมด AR:</strong> หากกล้องยังไม่ทำงาน ให้กดปุ่ม <strong>"ปลดล็อกสิทธิ์กล้อง"</strong> เพื่ออนุญาตให้ใช้งานกล้องถ่ายภาพ</span>
+        </span>
+        <button onclick="requestParentCameraPermission()" class="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-all whitespace-nowrap flex items-center gap-1 shadow">
+          <span>📸</span> ปลดล็อกสิทธิ์กล้อง
+        </button>
+      </div>
+
+      <!-- Dynamic Player Viewport Container (Target for Fullscreen API) -->
+      <div id="player-viewport-container" class="w-full relative flex items-center justify-center bg-slate-950 rounded-2xl overflow-hidden border border-slate-800 my-1 transition-all">
+        
+        <!-- Canvas Viewport for Built-in Games -->
+        <canvas id="game-canvas" width="600" height="380" class="max-w-full h-auto shadow-inner hidden"></canvas>
+        
+        <!-- Iframe Viewport for Uploaded HTML Games & AR Games (Full Camera & Sensor Permissions Enabled) -->
+        <iframe id="game-iframe" class="hidden" allowfullscreen="true" webkitallowfullscreen="true" mozallowfullscreen="true" allow="camera *; microphone *; accelerometer *; gyroscope *; magnetometer *; xr-spatial-tracking *; autoplay *; fullscreen *; geolocation *"></iframe>
+      
+      </div>
+
+      <!-- Control Instructions & Action Bar -->
+      <div class="w-full mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-300 bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
+        <div class="flex items-center gap-2">
+          <span>🎮 <strong class="text-white">การควบคุม:</strong></span>
+          <span id="player-game-controls" class="text-slate-300">ใช้เมาส์ คีย์บอร์ด หรือกล้องถ่ายภาพในการเล่น</span>
+        </div>
+
+        <!-- Interactive Star Rating in Player Modal -->
+        <div class="flex items-center gap-2 border-t sm:border-t-0 border-slate-700 pt-2 sm:pt-0">
+          <span class="text-amber-400 font-medium">ให้คะแนน:</span>
+          <div id="player-rating-stars" class="flex items-center gap-1 text-amber-400 text-base">
+            <!-- Stars rendered dynamically -->
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <!-- Main Fullscreen Button in Bottom Action Bar -->
+          <button id="btn-fullscreen-bottom" onclick="toggleFullscreen()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium transition-colors flex items-center gap-1.5 shadow-sm">
+            <span>⛶</span> <span id="fs-btn-label">ขยายเต็มหน้าจอ</span>
+          </button>
+          
+          <button id="btn-restart-canvas" onclick="restartCurrentGame()" class="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 font-medium transition-colors hidden">
+            🔄 เริ่มเกมใหม่
+          </button>
+          
+          <button onclick="closeGameModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors">
+            ปิด
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200/80 py-6 mt-12 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4">
+      <p>NTM Arcade Hub & Game Archive System | โรงเรียนวัดเนินตามาก สพป. ชลบุรี เขต 2</p>
+      <p class="mt-1 text-slate-400">รองรับการอัปโหลด แชร์ลิงก์ตรงสำหรับเปิดเล่นบน Google Chrome ระบบ AR เปิดกล้อง และเล่นเต็มหน้าจอทุกอุปกรณ์ • ระบบอัปเดตข้อมูลแบบ Real-Time</p>
+    </div>
+  </footer>
+
+  <!-- Embedded JavaScript Engine & Application Logic with Firebase Realtime Sync -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // Admin System State Variables
+    let isAdminLoggedIn = false;
+    const ADMIN_PIN = "6015901023"; // Admin PIN
+    let editUploadedCoverData = null;
+    let pendingDeleteGameId = null;
+
+    // Firebase Cloud Configuration & Paths
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'ntm-arcade-app';
+    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+    
+    let db = null;
+    let auth = null;
+    let currentUser = null;
+    let gamesCollectionRef = null;
+
+    // Initial Default Game Dataset with AR Camera Support
+    const defaultGameDatabase = [
+      {
+        id: 1,
+        title: "Cyber Snake 2099",
+        developer: "NTM Studio",
+        category: "Arcade",
+        engine: "HTML5 Canvas",
+        plays: 0,
+        rating: 0.0,
+        ratingCount: 0,
+        ratingSum: 0,
+        uploadedAt: "10/08/2026",
+        description: "เกมงูกินจุดในโลกไซเบอร์สไตล์นีออนเรโทร สามารถขยายจอใหญ่เล่นได้อย่างลื่นไหล",
+        coverUrl: "https://placehold.co/600x350/090d16/10b981?text=Cyber+Snake+2099",
+        gameType: "snake"
+      },
+      {
+        id: 2,
+        title: "Space Defender",
+        developer: "Galaxy Lab",
+        category: "Sci-Fi",
+        engine: "HTML5 Canvas",
+        plays: 0,
+        rating: 0.0,
+        ratingCount: 0,
+        ratingSum: 0,
+        uploadedAt: "05/08/2026",
+        description: "เกมยานอวกาศยิงอุกกาบาตและปกป้องฐานดาวเคราะห์ รองรับปุ่มลูกศรและการกดขยายเต็มหน้าจอ",
+        coverUrl: "https://placehold.co/600x350/0f172a/6366f1?text=Space+Defender",
+        gameType: "space"
+      },
+      {
+        id: 3,
+        title: "Brick Breaker Deluxe",
+        developer: "Arcade Master",
+        category: "Action",
+        engine: "HTML5 Canvas",
+        plays: 0,
+        rating: 0.0,
+        ratingCount: 0,
+        ratingSum: 0,
+        uploadedAt: "01/08/2026",
+        description: "เกมเด้งลูกบอลทำลายบล็อกสี คลาสสิกสนุกเพลิดเพลิน ทดสอบปฏิกิริยาตอบสนองและจังหวะรับลูกบอล",
+        coverUrl: "https://placehold.co/600x350/18181b/ec4899?text=Brick+Breaker",
+        gameType: "brick"
+      }
+    ];
+
+    let gameDatabase = [];
+
+    // Category Styling Mappings
+    const categoryTheme = {
+      'AR / Camera': { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', chart: '#A855F7' },
+      'Arcade': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', chart: '#10B981' },
+      'Action': { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', chart: '#F43F5E' },
+      'Puzzle': { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', chart: '#6366F1' },
+      'Sci-Fi': { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', chart: '#0EA5E9' },
+      'Casual': { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', chart: '#F59E0B' }
+    };
+
+    let currentCategoryFilter = 'ALL';
+    let categoryChartInstance = null;
+    let playsTrendChartInstance = null;
+    let uploadedFileContent = null;
+    let uploadedCoverData = null;
+    let isSimulatedFs = false;
+
+    // Helper: Image Compressor
+    function compressImageFile(file, maxWidth, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+          callback(compressedDataUrl);
+        };
+        img.onerror = function() {
+          callback(e.target.result);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Real-time Cloud Sync Initialization Function
+    async function initCloudSync() {
+      if (!firebaseConfig) {
+        console.warn("Firebase config not available, using in-memory state.");
+        gameDatabase = [...defaultGameDatabase];
+        filterGames();
+        renderDashboardAnalytics();
+        return;
+      }
+
+      try {
+        const app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+
+        // Rule 3: Auth Before Queries
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        if (initialAuthToken) {
+          const cred = await signInWithCustomToken(auth, initialAuthToken);
+          currentUser = cred.user;
+        } else {
+          const cred = await signInAnonymously(auth);
+          currentUser = cred.user;
+        }
+
+        if (!currentUser) return;
+
+        // Rule 1: Public Collection Strict Path
+        gamesCollectionRef = collection(db, 'artifacts', appId, 'public', 'data', 'games');
+
+        // Real-Time Listener on Firestore Collection
+        onSnapshot(gamesCollectionRef, (snapshot) => {
+          let cloudGames = [];
+          snapshot.forEach((docSnap) => {
+            cloudGames.push(docSnap.data());
+          });
+
+          if (cloudGames.length === 0) {
+            defaultGameDatabase.forEach(async (g) => {
+              await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'games', String(g.id)), g);
+            });
+          } else {
+            gameDatabase = cloudGames;
+            filterGames();
+            renderDashboardAnalytics();
+          }
+        }, (err) => {
+          console.error("Firestore Real-Time Listener Error:", err);
+        });
+
+      } catch (err) {
+        console.error("Firebase Cloud Auth Error:", err);
+        gameDatabase = [...defaultGameDatabase];
+        filterGames();
+        renderDashboardAnalytics();
+      }
+    }
+
+    // Real-Time Save/Update Helper to Firestore
+    async function syncGameToCloud(game) {
+      if (!db || !currentUser) return;
+      try {
+        const gameDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', String(game.id));
+        await setDoc(gameDocRef, game);
+      } catch (err) {
+        console.error("Error syncing game to cloud:", err);
+      }
+    }
+
+    // Real-Time Delete Helper from Firestore
+    async function deleteGameFromCloud(gameId) {
+      if (!db || !currentUser) return;
+      try {
+        const gameDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', String(gameId));
+        await deleteDoc(gameDocRef);
+      } catch (err) {
+        console.error("Error deleting game from cloud:", err);
+      }
+    }
+
+    // Game Engine Loop Variable
+    let activeGameLoop = null;
+    let activeGameType = null;
+    let currentGameScore = 0;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderArcadeCategoryPills();
+      await initCloudSync();
+
+      checkAndAutoOpenChrome();
+
+      document.addEventListener('fullscreenchange', updateFullscreenButtonUI);
+      document.addEventListener('webkitfullscreenchange', updateFullscreenButtonUI);
+      document.addEventListener('mozfullscreenchange', updateFullscreenButtonUI);
+      document.addEventListener('MSFullscreenChange', updateFullscreenButtonUI);
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let targetGameId = urlParams.get('game');
+      
+      if (!targetGameId && window.location.hash) {
+        const match = window.location.hash.match(/game=(\d+)/);
+        if (match) targetGameId = match[1];
+      }
+
+      if (targetGameId) {
+        const gId = parseInt(targetGameId);
+        setTimeout(() => {
+          const targetGame = gameDatabase.find(g => g.id === gId);
+          if (targetGame) {
+            launchGameEngine(gId);
+            showToastWithPlayAction(`เปิดเกม "${targetGame.title}" จากลิงก์ตรงเรียบร้อย!`, gId);
+          }
+        }, 600);
+      }
+    });
+
+    function checkAndAutoOpenChrome() {
+      try {
+        const isAndroid = /Android/i.test(navigator.userAgent);
+        const isInAppBrowser = /Line|FBAN|FBAV|Instagram|MicroMessenger/i.test(navigator.userAgent);
+        
+        if (isAndroid && isInAppBrowser) {
+          const cleanUrl = window.location.href.replace(/^https?:\/\//, '');
+          window.location.href = `intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end`;
+        }
+      } catch (err) {
+        console.warn("Chrome check error:", err);
+      }
+    }
+
+    function copyGameDirectLink(gameId) {
+      const game = gameDatabase.find(g => g.id == gameId);
+      if (!game) return;
+
+      const baseUrl = window.location.origin + window.location.pathname;
+      const directUrl = `${baseUrl}?game=${gameId}`;
+      
+      copyToClipboard(directUrl);
+      showToastWithPlayAction(`คัดลอกลิงก์เกม "${game.title}" เรียบร้อย! นำไปแชร์เปิดเล่นบน Google Chrome ได้ทันที`, gameId);
+    }
+
+    function copyActiveGameDirectLink() {
+      if (currentModalGameId) {
+        copyGameDirectLink(currentModalGameId);
+      }
+    }
+
+    function copyToClipboard(text) {
+      const tempInput = document.createElement('input');
+      tempInput.value = text;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+    }
+
+    function renderArcadeCategoryPills() {
+      const container = document.getElementById('category-filter-pills');
+      if (!container) return;
+      const categories = ['ALL', 'AR / Camera', 'Arcade', 'Action', 'Puzzle', 'Sci-Fi', 'Casual'];
+      container.innerHTML = categories.map(cat => {
+        const isSelected = currentCategoryFilter === cat;
+        const activeClasses = isSelected 
+          ? 'bg-indigo-600 text-white font-bold shadow-sm' 
+          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium';
+        const label = cat === 'ALL' ? 'ทั้งหมด (All)' : cat;
+        return `<button onclick="selectCategoryFilter('${cat}')" class="px-3 py-1.5 rounded-xl text-xs transition-all whitespace-nowrap ${activeClasses}">${label}</button>`;
+      }).join('');
+    }
+
+    function selectCategoryFilter(cat) {
+      currentCategoryFilter = cat;
+      renderArcadeCategoryPills();
+      filterGames();
+    }
+
+    function filterGames() {
+      const searchInput = document.getElementById('searchInput');
+      const sortSelect = document.getElementById('sortSelect');
+      const searchVal = searchInput ? searchInput.value.toLowerCase().trim() : '';
+      const sortVal = sortSelect ? sortSelect.value : 'newest';
+
+      let filtered = gameDatabase.filter(game => {
+        const matchesCategory = currentCategoryFilter === 'ALL' || game.category === currentCategoryFilter;
+        const matchesSearch = game.title.toLowerCase().includes(searchVal) ||
+                              game.developer.toLowerCase().includes(searchVal) ||
+                              game.description.toLowerCase().includes(searchVal);
+        return matchesCategory && matchesSearch;
+      });
+
+      if (sortVal === 'popular') {
+        filtered.sort((a, b) => (b.plays || 0) - (a.plays || 0));
+      } else if (sortVal === 'rating') {
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      } else {
+        filtered.sort((a, b) => b.id - a.id);
+      }
+
+      renderGameGrid(filtered);
+    }
+
+    function resetFilters() {
+      currentCategoryFilter = 'ALL';
+      const searchInput = document.getElementById('searchInput');
+      const sortSelect = document.getElementById('sortSelect');
+      if (searchInput) searchInput.value = '';
+      if (sortSelect) sortSelect.value = 'newest';
+      renderArcadeCategoryPills();
+      filterGames();
+    }
+
+    function switchTab(tabName) {
+      const tabs = ['arcade', 'dashboard', 'upload'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`tab-${t}`);
+        const sec = document.getElementById(`sec-${t}`);
+        if (t === tabName) {
+          btn.classList.add('bg-indigo-600', 'text-white', 'shadow-md');
+          btn.classList.remove('text-indigo-200');
+          sec.classList.remove('hidden');
+        } else {
+          btn.classList.remove('bg-indigo-600', 'text-white', 'shadow-md');
+          btn.classList.add('text-indigo-200');
+          sec.classList.add('hidden');
+        }
+      });
+
+      if (tabName === 'dashboard') {
+        renderDashboardAnalytics();
+      }
+    }
+
+    function toggleAdminAuth() {
+      if (isAdminLoggedIn) {
+        logoutAdmin();
+      } else {
+        openAdminLoginModal();
+      }
+    }
+
+    function openAdminLoginModal() {
+      document.getElementById('admin-login-error').classList.add('hidden');
+      document.getElementById('admin-pass-input').value = '';
+      document.getElementById('admin-login-modal').classList.remove('hidden');
+    }
+
+    function closeAdminLoginModal() {
+      document.getElementById('admin-login-modal').classList.add('hidden');
+    }
+
+    function handleAdminLoginSubmit(e) {
+      e.preventDefault();
+      const pin = document.getElementById('admin-pass-input').value.trim();
+      
+      if (pin === ADMIN_PIN) {
+        isAdminLoggedIn = true;
+        closeAdminLoginModal();
+        updateAdminUIState();
+        filterGames();
+        showToastWithPlayAction("เข้าสู่ระบบผู้ดูแล (Admin) เรียบร้อยแล้ว!", null);
+      } else {
+        document.getElementById('admin-login-error').classList.remove('hidden');
+      }
+    }
+
+    function logoutAdmin() {
+      isAdminLoggedIn = false;
+      updateAdminUIState();
+      filterGames();
+      showToastWithPlayAction("ออกจากระบบผู้ดูแลแล้ว", null);
+    }
+
+    function updateAdminUIState() {
+      const toggleBtn = document.getElementById('admin-toggle-btn');
+      const icon = document.getElementById('admin-badge-icon');
+      const text = document.getElementById('admin-badge-text');
+
+      if (isAdminLoggedIn) {
+        icon.innerText = '🛡️';
+        text.innerText = 'โหมดผู้ดูแล (Admin ON)';
+        toggleBtn.classList.replace('bg-slate-800', 'bg-emerald-600');
+        toggleBtn.classList.replace('text-slate-300', 'text-white');
+      } else {
+        icon.innerText = '🔐';
+        text.innerText = 'เข้าสู่ระบบ Admin';
+        toggleBtn.classList.replace('bg-emerald-600', 'bg-slate-800');
+        toggleBtn.classList.replace('text-white', 'text-slate-300');
+      }
+    }
+
+    function openEditGameModal(gameId) {
+      if (!isAdminLoggedIn) {
+        openAdminLoginModal();
+        return;
+      }
+
+      const game = gameDatabase.find(g => g.id === gameId);
+      if (!game) return;
+
+      editUploadedCoverData = null;
+      document.getElementById('edit-cover-file').value = '';
+      document.getElementById('edit-cover-file-label').innerText = 'คลิกเลือกอัปโหลดไฟล์รูปภาพหน้าปกใหม่';
+
+      document.getElementById('edit-game-id').value = game.id;
+      document.getElementById('edit-title').value = game.title;
+      document.getElementById('edit-developer').value = game.developer;
+      document.getElementById('edit-category').value = game.category;
+      document.getElementById('edit-engine').value = game.engine;
+      document.getElementById('edit-cover-url').value = game.coverUrl && !game.coverUrl.startsWith('data:image/') ? game.coverUrl : '';
+      document.getElementById('edit-description').value = game.description;
+      document.getElementById('edit-url').value = game.externalUrl || '';
+
+      const coverSrc = game.coverUrl || '';
+      const previewImg = document.getElementById('edit-cover-preview-img');
+      const previewPlaceholder = document.getElementById('edit-cover-preview-placeholder');
+
+      if (coverSrc) {
+        previewImg.src = coverSrc;
+        previewImg.setAttribute('data-original-cover', coverSrc);
+        previewImg.classList.remove('hidden');
+        previewPlaceholder.classList.add('hidden');
+      } else {
+        previewImg.removeAttribute('data-original-cover');
+        previewImg.classList.add('hidden');
+        previewPlaceholder.classList.remove('hidden');
+      }
+
+      document.getElementById('admin-edit-modal').classList.remove('hidden');
+    }
+
+    function handleEditCoverUploadChange(input) {
+      const labelText = document.getElementById('edit-cover-file-label');
+      const previewImg = document.getElementById('edit-cover-preview-img');
+      const previewPlaceholder = document.getElementById('edit-cover-preview-placeholder');
+
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        labelText.innerText = `รูปใหม่: ${file.name}`;
+
+        compressImageFile(file, 640, 0.75, function(compressedBase64) {
+          editUploadedCoverData = compressedBase64;
+          previewImg.src = editUploadedCoverData;
+          previewImg.classList.remove('hidden');
+          previewPlaceholder.classList.add('hidden');
+        });
+      }
+    }
+
+    function handleEditCoverUrlInput(urlVal) {
+      const previewImg = document.getElementById('edit-cover-preview-img');
+      const previewPlaceholder = document.getElementById('edit-cover-preview-placeholder');
+
+      if (urlVal && urlVal.trim() !== '') {
+        previewImg.src = urlVal.trim();
+        previewImg.classList.remove('hidden');
+        previewPlaceholder.classList.add('hidden');
+      } else if (!editUploadedCoverData) {
+        const currentCover = previewImg.getAttribute('data-original-cover');
+        if (currentCover) {
+          previewImg.src = currentCover;
+          previewImg.classList.remove('hidden');
+          previewPlaceholder.classList.add('hidden');
+        } else {
+          previewImg.classList.add('hidden');
+          previewPlaceholder.classList.remove('hidden');
+        }
+      }
+    }
+
+    function closeAdminEditModal() {
+      document.getElementById('admin-edit-modal').classList.add('hidden');
+    }
+
+    async function handleSaveEditedGame(e) {
+      e.preventDefault();
+      const id = parseInt(document.getElementById('edit-game-id').value);
+      const game = gameDatabase.find(g => g.id === id);
+
+      if (game) {
+        const coverUrlInput = document.getElementById('edit-cover-url').value.trim();
+        const finalCover = editUploadedCoverData || coverUrlInput || game.coverUrl || null;
+
+        game.title = document.getElementById('edit-title').value.trim();
+        game.developer = document.getElementById('edit-developer').value.trim();
+        game.category = document.getElementById('edit-category').value;
+        game.engine = document.getElementById('edit-engine').value;
+        game.coverUrl = finalCover;
+        game.description = document.getElementById('edit-description').value.trim();
+        game.externalUrl = document.getElementById('edit-url').value.trim() || null;
+
+        await syncGameToCloud(game);
+        filterGames();
+        renderDashboardAnalytics();
+        closeAdminEditModal();
+        showToastWithPlayAction(`อัปเดตข้อมูลและรูปหน้าปกเกม "${game.title}" เรียบร้อยแล้ว!`, null);
+      }
+    }
+
+    function openDeleteGameModal(gameId) {
+      if (!isAdminLoggedIn) {
+        openAdminLoginModal();
+        return;
+      }
+
+      const game = gameDatabase.find(g => g.id === gameId);
+      if (!game) return;
+
+      pendingDeleteGameId = gameId;
+      document.getElementById('delete-target-title').innerText = `คุณแน่ใจหรือไม่ที่จะลบเกม "${game.title}" ออกจากระบบ?`;
+      document.getElementById('btn-confirm-delete').onclick = function() { executeDeleteGame(); };
+      document.getElementById('delete-confirm-modal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      pendingDeleteGameId = null;
+      document.getElementById('delete-confirm-modal').classList.add('hidden');
+    }
+
+    async function executeDeleteGame() {
+      if (pendingDeleteGameId !== null) {
+        const game = gameDatabase.find(g => g.id === pendingDeleteGameId);
+        const title = game ? game.title : 'เกม';
+
+        await deleteGameFromCloud(pendingDeleteGameId);
+        gameDatabase = gameDatabase.filter(g => g.id !== pendingDeleteGameId);
+        filterGames();
+        renderDashboardAnalytics();
+        closeDeleteModal();
+        showToastWithPlayAction(`ลบเกม "${title}" ออกจากระบบเรียบร้อยแล้ว`, null);
+      }
+    }
+
+    function renderGameGrid(games) {
+      const grid = document.getElementById('gameGrid');
+      const emptyState = document.getElementById('empty-state');
+      document.getElementById('badge-game-count').innerText = gameDatabase.length;
+
+      if (games.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      grid.innerHTML = games.map(game => {
+        const theme = categoryTheme[game.category] || categoryTheme['Casual'];
+        const coverSrc = game.coverUrl || `https://placehold.co/600x350/1e1b4b/818cf8?text=${encodeURIComponent(game.title)}`;
+
+        const adminControls = isAdminLoggedIn ? `
+          <div class="flex items-center gap-1 mb-2">
+            <button onclick="openEditGameModal(${game.id})" class="px-2 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-700 text-[10px] font-bold border border-amber-200">
+              ✏️ แก้ไข
+            </button>
+            <button onclick="openDeleteGameModal(${game.id})" class="px-2 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 text-[10px] font-bold border border-rose-200">
+              🗑️ ลบ
+            </button>
+          </div>
+        ` : '';
+
+        const cardStars = [1, 2, 3, 4, 5].map(star => `
+          <button onclick="event.stopPropagation(); submitGameRating(${game.id}, ${star})" title="ให้ ${star} ดาว" class="hover:scale-125 transition-transform text-amber-400 focus:outline-none">
+            ${star <= Math.round(game.rating || 0) ? '★' : '☆'}
+          </button>
+        `).join('');
+
+        const isAR = game.category === 'AR / Camera' || (game.engine && game.engine.includes('AR'));
+
+        return `
+          <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 flex flex-col justify-between hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+            <div>
+              <div onclick="launchGameEngine(${game.id})" class="w-full h-44 rounded-xl overflow-hidden bg-slate-900 relative mb-3 cursor-pointer group border border-slate-200 shadow-inner">
+                <img src="${coverSrc}" 
+                     alt="${escapeHtml(game.title)}" 
+                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                     onerror="this.onerror=null; this.src='https://placehold.co/600x350/0f172a/818cf8?text=NTM+Arcade';" />
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity"></div>
+                
+                ${isAR ? `<div class="absolute top-2.5 left-2.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-600 text-white shadow-md flex items-center gap-1">📷 AR Camera</div>` : ''}
+
+                <div class="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${theme.bg} ${theme.text} border ${theme.border} shadow-sm">
+                    ${game.category}
+                  </span>
+                  <span class="text-[10px] bg-slate-950/80 text-white font-mono px-2 py-0.5 rounded-md border border-slate-700">
+                    ${game.engine}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <div class="flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
+                  <span class="text-[11px] font-bold text-amber-600">⭐ ${game.rating > 0 ? game.rating.toFixed(1) : '0.0'}</span>
+                  <span class="text-[10px] text-slate-400">(${game.ratingCount || 0})</span>
+                </div>
+                ${adminControls}
+              </div>
+
+              <h3 onclick="launchGameEngine(${game.id})" class="font-bold text-slate-800 text-base mb-1 hover:text-indigo-600 cursor-pointer transition-colors line-clamp-1">
+                ${escapeHtml(game.title)}
+              </h3>
+              <p class="text-xs text-indigo-600 font-medium mb-2.5">
+                🎮 โดย: ${escapeHtml(game.developer)}
+              </p>
+
+              <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-3">
+                ${escapeHtml(game.description)}
+              </p>
+
+              <div class="flex items-center justify-between gap-1 mb-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <div class="flex items-center gap-1">
+                  <span class="text-[11px] text-slate-500 font-medium">ให้คะแนน:</span>
+                  <div class="flex items-center gap-0.5 text-sm">
+                    ${cardStars}
+                  </div>
+                </div>
+
+                <button onclick="copyGameDirectLink(${game.id})" title="คัดลอกลิงก์ตรงสำหรับเปิดบน Google Chrome" class="px-2 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[10px] font-bold rounded-lg border border-indigo-200 transition-all flex items-center gap-1">
+                  <span>🔗</span> <span>ลิงก์ Chrome</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+              <span class="text-xs text-slate-400">
+                ▶️ เล่นแล้ว ${(game.plays || 0).toLocaleString()} ครั้ง
+              </span>
+
+              <button onclick="launchGameEngine(${game.id})" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-200 transition-all flex items-center gap-1.5">
+                <span>▶️</span> เล่นเกมตอนนี้
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    let currentModalGameId = null;
+
+    async function requestParentCameraPermission() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        stream.getTracks().forEach(track => track.stop());
+        showToastWithPlayAction("อนุมัติสิทธิ์ใช้งานกล้องถ่ายภาพเรียบร้อยแล้ว!", null);
+
+        const iframe = document.getElementById('game-iframe');
+        if (iframe && iframe.srcdoc) {
+          const currentSrcdoc = iframe.srcdoc;
+          iframe.srcdoc = '';
+          setTimeout(() => { iframe.srcdoc = currentSrcdoc; }, 150);
+        } else if (iframe && iframe.src && iframe.src !== 'about:blank') {
+          const currentSrc = iframe.src;
+          iframe.src = 'about:blank';
+          setTimeout(() => { iframe.src = currentSrc; }, 150);
+        }
+      } catch (err) {
+        console.error("Camera access error:", err);
+        showToastWithPlayAction("ไม่สามารถเข้าถึงกล้องได้: โปรดตรวจสอบว่าได้เปิดเว็บด้วย HTTPS หรือไม่ได้บล็อกกล้องในการตั้งค่าเบราว์เซอร์", null);
+      }
+    }
+
+    async function submitGameRating(gameId, stars) {
+      const game = gameDatabase.find(g => g.id == gameId);
+      if (!game) return;
+
+      game.ratingSum = (game.ratingSum || 0) + stars;
+      game.ratingCount = (game.ratingCount || 0) + 1;
+      game.rating = game.ratingSum / game.ratingCount;
+
+      await syncGameToCloud(game);
+      filterGames();
+      renderDashboardAnalytics();
+
+      if (currentModalGameId == gameId) {
+        renderModalRatingStars(game);
+      }
+
+      showToastWithPlayAction(`ขอบคุณสำหรับการให้คะแนน ${stars} ดาวแก่เกม "${game.title}"!`, null);
+    }
+
+    async function launchGameEngine(gameId) {
+      checkAndAutoOpenChrome();
+
+      const game = gameDatabase.find(g => g.id == gameId);
+      if (!game) return;
+
+      currentModalGameId = gameId;
+      game.plays = (game.plays || 0) + 1;
+
+      await syncGameToCloud(game);
+      filterGames();
+      renderDashboardAnalytics();
+
+      const titleElem = document.getElementById('player-game-title');
+      const catElem = document.getElementById('player-game-category');
+      const engineElem = document.getElementById('player-game-engine');
+      if (titleElem) titleElem.innerText = game.title;
+      if (catElem) catElem.innerText = game.category;
+      if (engineElem) engineElem.innerText = game.engine;
+
+      renderModalRatingStars(game);
+
+      const canvas = document.getElementById('game-canvas');
+      const iframe = document.getElementById('game-iframe');
+      const restartBtn = document.getElementById('btn-restart-canvas');
+      const arNotice = document.getElementById('ar-camera-notice');
+
+      const isARGame = game.category === 'AR / Camera' || (game.engine && game.engine.includes('AR'));
+
+      if (isARGame && arNotice) {
+        arNotice.classList.remove('hidden');
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream.getTracks().forEach(track => track.stop());
+        } catch (e) {
+          console.log("Pre-request camera prompt:", e);
+        }
+      } else if (arNotice) {
+        arNotice.classList.add('hidden');
+      }
+
+      if (game.uploadedHtml) {
+        if (canvas) canvas.classList.add('hidden');
+        if (iframe) {
+          iframe.classList.remove('hidden');
+          iframe.removeAttribute('sandbox');
+          iframe.setAttribute('allow', 'camera *; microphone *; accelerometer *; gyroscope *; magnetometer *; xr-spatial-tracking *; autoplay *; fullscreen *; geolocation *');
+          iframe.srcdoc = game.uploadedHtml;
+        }
+        if (restartBtn) restartBtn.classList.add('hidden');
+        document.getElementById('player-game-controls').innerText = isARGame ? 'ส่องกล้องถ่ายภาพเพื่อเล่นเกม AR • กด ⛶ เพื่อขยายเต็มจอ' : 'ควบคุมผ่านหน้าจอเกม HTML5 • กด ⛶ เพื่อขยายเต็มจอ';
+      } else if (game.externalUrl) {
+        if (canvas) canvas.classList.add('hidden');
+        if (iframe) {
+          iframe.classList.remove('hidden');
+          iframe.removeAttribute('sandbox');
+          iframe.setAttribute('allow', 'camera *; microphone *; accelerometer *; gyroscope *; magnetometer *; xr-spatial-tracking *; autoplay *; fullscreen *; geolocation *');
+          iframe.srcdoc = '';
+          iframe.src = game.externalUrl;
+        }
+        if (restartBtn) restartBtn.classList.add('hidden');
+        document.getElementById('player-game-controls').innerText = 'ควบคุมผ่านเว็บฝั่งภายนอก • กด ⛶ เพื่อขยายเต็มจอ';
+      } else {
+        if (iframe) {
+          iframe.classList.add('hidden');
+          iframe.srcdoc = '';
+        }
+        if (canvas) canvas.classList.remove('hidden');
+        if (restartBtn) restartBtn.classList.remove('hidden');
+        activeGameType = game.gameType || 'snake';
+        initSelectedGame(activeGameType);
+      }
+
+      document.getElementById('game-player-modal').classList.remove('hidden');
+    }
+
+    function closeGameModal() {
+      exitFullscreenMode();
+      if (activeGameLoop) {
+        cancelAnimationFrame(activeGameLoop);
+        clearInterval(activeGameLoop);
+        activeGameLoop = null;
+      }
+      const iframe = document.getElementById('game-iframe');
+      if (iframe) {
+        iframe.srcdoc = '';
+        iframe.src = 'about:blank';
+      }
+      currentModalGameId = null;
+      document.getElementById('game-player-modal').classList.add('hidden');
+    }
+
+    function renderModalRatingStars(game) {
+      const starsContainer = document.getElementById('player-rating-stars');
+      if (!starsContainer) return;
+
+      starsContainer.innerHTML = [1, 2, 3, 4, 5].map(star => `
+        <button onclick="submitGameRating(${game.id}, ${star})" title="ให้ ${star} ดาว" class="hover:scale-125 transition-transform focus:outline-none">
+          ${star <= Math.round(game.rating || 0) ? '★' : '☆'}
+        </button>
+      `).join('');
+    }
+
+    function restartCurrentGame() {
+      if (activeGameType) {
+        initSelectedGame(activeGameType);
+      }
+    }
+
+    function toggleFullscreen() {
+      const targetElem = document.getElementById('player-viewport-container');
+      const isNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+
+      if (isNativeFs || isSimulatedFs) {
+        exitFullscreenMode();
+        return;
+      }
+
+      let promise = null;
+      try {
+        if (targetElem.requestFullscreen) {
+          promise = targetElem.requestFullscreen();
+        } else if (targetElem.webkitRequestFullscreen) {
+          promise = targetElem.webkitRequestFullscreen();
+        } else if (targetElem.mozRequestFullScreen) {
+          promise = targetElem.mozRequestFullScreen();
+        } else if (targetElem.msRequestFullscreen) {
+          promise = targetElem.msRequestFullscreen();
+        } else {
+          enableSimulatedFullscreen();
+          return;
+        }
+
+        if (promise && promise.catch) {
+          promise.catch(() => {
+            enableSimulatedFullscreen();
+          });
+        }
+      } catch (err) {
+        enableSimulatedFullscreen();
+      }
+    }
+
+    function enableSimulatedFullscreen() {
+      isSimulatedFs = true;
+      document.body.classList.add('simulated-fullscreen-active');
+      updateFullscreenButtonUI();
+    }
+
+    function exitFullscreenMode() {
+      if (isSimulatedFs) {
+        isSimulatedFs = false;
+        document.body.classList.remove('simulated-fullscreen-active');
+        updateFullscreenButtonUI();
+      }
+
+      try {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+          if (document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          } else if (document.mozCancelFullScreen) {
+            document.mozCancelFullScreen();
+          } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+          }
+        }
+      } catch (e) {
+        // Ignore exit errors
+      }
+    }
+
+    function updateFullscreenButtonUI() {
+      const isNativeFs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+      const isFs = isNativeFs || isSimulatedFs;
+      
+      const topBtn = document.getElementById('btn-fullscreen-top');
+      const bottomBtn = document.getElementById('btn-fullscreen-bottom');
+
+      if (isFs) {
+        topBtn.innerHTML = `<span>↙️</span> <span class="hidden sm:inline">ย่อจอ</span>`;
+        topBtn.classList.replace('bg-slate-800', 'bg-indigo-600');
+        topBtn.classList.replace('text-slate-300', 'text-white');
+
+        bottomBtn.innerHTML = `<span>↙️</span> <span>ย่อขนาดหน้าจอ</span>`;
+        bottomBtn.classList.replace('bg-indigo-600', 'bg-slate-700');
+      } else {
+        topBtn.innerHTML = `<span>⛶</span> <span class="hidden sm:inline">เต็มจอ</span>`;
+        topBtn.classList.replace('bg-indigo-600', 'bg-slate-800');
+        topBtn.classList.replace('text-white', 'text-indigo-400');
+
+        bottomBtn.innerHTML = `<span>⛶</span> <span>ขยายเต็มหน้าจอ</span>`;
+        bottomBtn.classList.replace('bg-slate-700', 'bg-indigo-600');
+      }
+    }
+
+    function initSelectedGame(type) {
+      if (activeGameLoop) {
+        cancelAnimationFrame(activeGameLoop);
+        clearInterval(activeGameLoop);
+      }
+
+      const canvas = document.getElementById('game-canvas');
+      const ctx = canvas.getContext('2d');
+      currentGameScore = 0;
+      document.getElementById('player-game-score').innerText = '0 คะแนน';
+
+      if (type === 'space') {
+        runSpaceShooterGame(canvas, ctx);
+      } else if (type === 'brick') {
+        runBrickBreakerGame(canvas, ctx);
+      } else {
+        runSnakeGame(canvas, ctx);
+      }
+    }
+
+    function runSnakeGame(canvas, ctx) {
+      document.getElementById('player-game-controls').innerText = 'ใช้ปุ่มลูกศร ⬅️ ➡️ ⬆️ ⬇️ บนคีย์บอร์ดเพื่อเลี้ยวงู • กด ⛶ เพื่อขยายเต็มจอ';
+      
+      const gridSize = 15;
+      const tileCountX = canvas.width / gridSize;
+      const tileCountY = canvas.height / gridSize;
+
+      let snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }];
+      let dx = 1, dy = 0;
+      let food = { x: 15, y: 10 };
+
+      function handleKeyDown(e) {
+        if (e.key === 'ArrowUp' && dy !== 1) { dx = 0; dy = -1; }
+        if (e.key === 'ArrowDown' && dy !== -1) { dx = 0; dy = 1; }
+        if (e.key === 'ArrowLeft' && dx !== 1) { dx = -1; dy = 0; }
+        if (e.key === 'ArrowRight' && dx !== -1) { dx = 1; dy = 0; }
+      }
+      window.addEventListener('keydown', handleKeyDown);
+
+      activeGameLoop = setInterval(() => {
+        const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+        
+        if (head.x < 0) head.x = tileCountX - 1;
+        if (head.x >= tileCountX) head.x = 0;
+        if (head.y < 0) head.y = tileCountY - 1;
+        if (head.y >= tileCountY) head.y = 0;
+
+        snake.unshift(head);
+
+        if (head.x === food.x && head.y === food.y) {
+          currentGameScore += 10;
+          document.getElementById('player-game-score').innerText = currentGameScore + ' คะแนน';
+          food = {
+            x: Math.floor(Math.random() * tileCountX),
+            y: Math.floor(Math.random() * tileCountY)
+          };
+        } else {
+          snake.pop();
+        }
+
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#f43f5e';
+        ctx.beginPath();
+        ctx.arc((food.x * gridSize) + gridSize/2, (food.y * gridSize) + gridSize/2, gridSize/2 - 1, 0, Math.PI * 2);
+        ctx.fill();
+
+        snake.forEach((part, index) => {
+          ctx.fillStyle = index === 0 ? '#10b981' : '#34d399';
+          ctx.fillRect(part.x * gridSize, part.y * gridSize, gridSize - 1, gridSize - 1);
+        });
+
+      }, 90);
+    }
+
+    function runSpaceShooterGame(canvas, ctx) {
+      document.getElementById('player-game-controls').innerText = 'ใช้ปุ่ม ⬅️ ➡️ เพื่อเลื่อนยาน และ Spacebar เพื่อยิง • กด ⛶ เพื่อขยายเต็มจอ';
+
+      let playerX = canvas.width / 2 - 15;
+      let bullets = [];
+      let enemies = [];
+
+      function handleSpaceKeys(e) {
+        if (e.key === 'ArrowLeft' && playerX > 0) playerX -= 20;
+        if (e.key === 'ArrowRight' && playerX < canvas.width - 30) playerX += 20;
+        if (e.key === ' ' || e.code === 'Space') {
+          bullets.push({ x: playerX + 13, y: canvas.height - 30 });
+        }
+      }
+      window.addEventListener('keydown', handleSpaceKeys);
+
+      activeGameLoop = setInterval(() => {
+        if (Math.random() < 0.08) {
+          enemies.push({ x: Math.random() * (canvas.width - 20), y: 0, speed: 2 + Math.random() * 2 });
+        }
+
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#6366f1';
+        ctx.beginPath();
+        ctx.moveTo(playerX + 15, canvas.height - 30);
+        ctx.lineTo(playerX, canvas.height - 10);
+        ctx.lineTo(playerX + 30, canvas.height - 10);
+        ctx.fill();
+
+        ctx.fillStyle = '#38bdf8';
+        bullets.forEach((b, bi) => {
+          b.y -= 7;
+          ctx.fillRect(b.x, b.y, 4, 10);
+          if (b.y < 0) bullets.splice(bi, 1);
+        });
+
+        ctx.fillStyle = '#f59e0b';
+        enemies.forEach((enemy, ei) => {
+          enemy.y += enemy.speed;
+          ctx.beginPath();
+          ctx.arc(enemy.x + 10, enemy.y + 10, 10, 0, Math.PI * 2);
+          ctx.fill();
+
+          bullets.forEach((b, bi) => {
+            if (b.x >= enemy.x && b.x <= enemy.x + 20 && b.y >= enemy.y && b.y <= enemy.y + 20) {
+              enemies.splice(ei, 1);
+              bullets.splice(bi, 1);
+              currentGameScore += 20;
+              document.getElementById('player-game-score').innerText = currentGameScore + ' คะแนน';
+            }
+          });
+
+          if (enemy.y > canvas.height) enemies.splice(ei, 1);
+        });
+
+      }, 1000 / 30);
+    }
+
+    function runBrickBreakerGame(canvas, ctx) {
+      document.getElementById('player-game-controls').innerText = 'ใช้ปุ่ม ⬅️ ➡️ เพื่อเลื่อนไม้รับลูกบอล • กด ⛶ เพื่อขยายเต็มจอ';
+
+      let paddleWidth = 75, paddleX = (canvas.width - paddleWidth) / 2;
+      let x = canvas.width / 2, y = canvas.height - 30;
+      let dx = 3, dy = -3;
+      const ballRadius = 6;
+
+      function handlePaddleKeys(e) {
+        if (e.key === 'ArrowLeft' && paddleX > 0) paddleX -= 25;
+        if (e.key === 'ArrowRight' && paddleX < canvas.width - paddleWidth) paddleX += 25;
+      }
+      window.addEventListener('keydown', handlePaddleKeys);
+
+      activeGameLoop = setInterval(() => {
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = '#ec4899';
+        ctx.fill();
+        ctx.closePath();
+
+        ctx.fillStyle = '#8b5cf6';
+        ctx.fillRect(paddleX, canvas.height - 15, paddleWidth, 10);
+
+        if (x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
+        if (y + dy < ballRadius) dy = -dy;
+        else if (y + dy > canvas.height - 15 - ballRadius) {
+          if (x > paddleX && x < paddleX + paddleWidth) {
+            dy = -dy;
+            currentGameScore += 5;
+            document.getElementById('player-game-score').innerText = currentGameScore + ' คะแนน';
+          } else {
+            x = canvas.width / 2;
+            y = canvas.height - 30;
+            dy = -3;
+          }
+        }
+
+        x += dx;
+        y += dy;
+      }, 1000 / 40);
+    }
+
+    function renderDashboardAnalytics() {
+      document.getElementById('stat-total-games').innerText = gameDatabase.length;
+      
+      const totalPlays = gameDatabase.reduce((acc, g) => acc + (g.plays || 0), 0);
+      document.getElementById('stat-total-plays').innerText = totalPlays.toLocaleString();
+
+      const activePlayedGames = gameDatabase.filter(g => (g.plays || 0) > 0);
+      const devSet = new Set(activePlayedGames.map(g => g.developer));
+      document.getElementById('stat-total-devs').innerText = devSet.size;
+
+      const ratedGames = gameDatabase.filter(g => (g.rating || 0) > 0);
+      const avgRating = ratedGames.length > 0 
+        ? (ratedGames.reduce((acc, g) => acc + g.rating, 0) / ratedGames.length).toFixed(1)
+        : "0.0";
+      document.getElementById('stat-avg-rating').innerText = avgRating;
+
+      const catCounts = {};
+      Object.keys(categoryTheme).forEach(c => catCounts[c] = 0);
+      gameDatabase.forEach(g => {
+        catCounts[g.category] = (catCounts[g.category] || 0) + 1;
+      });
+
+      const catLabels = Object.keys(catCounts);
+      const catData = Object.values(catCounts);
+      const catColors = catLabels.map(c => categoryTheme[c].chart);
+
+      const ctxCat = document.getElementById('gameCategoryChart').getContext('2d');
+      if (categoryChartInstance) categoryChartInstance.destroy();
+
+      categoryChartInstance = new Chart(ctxCat, {
+        type: 'doughnut',
+        data: {
+          labels: catLabels,
+          datasets: [{
+            data: catData,
+            backgroundColor: catColors,
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { font: { family: 'Prompt', size: 11 }, boxWidth: 12, padding: 12 }
+            }
+          }
+        }
+      });
+
+      const ctxTrend = document.getElementById('gamePlaysTrendChart').getContext('2d');
+      if (playsTrendChartInstance) playsTrendChartInstance.destroy();
+
+      const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+      const now = new Date();
+      const currentMonthIdx = now.getMonth();
+
+      const trendLabels = [];
+      for (let i = 3; i >= 0; i--) {
+        let mIdx = (currentMonthIdx - i + 12) % 12;
+        if (i === 0) {
+          trendLabels.push(thaiMonthsShort[mIdx] + ' (Real-time)');
+        } else {
+          trendLabels.push(thaiMonthsShort[mIdx]);
+        }
+      }
+
+      playsTrendChartInstance = new Chart(ctxTrend, {
+        type: 'bar',
+        data: {
+          labels: trendLabels,
+          datasets: [{
+            label: 'จำนวนครั้งที่ถูกเปิดเล่น',
+            data: [0, 0, 0, totalPlays],
+            backgroundColor: '#10B981',
+            borderRadius: 6
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: { beginAtZero: true, ticks: { font: { family: 'Prompt', size: 11 } }, grid: { color: '#f1f5f9' } },
+            x: { ticks: { font: { family: 'Prompt', size: 11 } }, grid: { display: false } }
+          },
+          plugins: {
+            legend: { display: false }
+          }
+        }
+      });
+    }
+
+    function handleCoverUploadChange(input) {
+      const labelText = document.getElementById('cover-file-label-text');
+      const previewImg = document.getElementById('cover-preview-img');
+      const previewPlaceholder = document.getElementById('cover-preview-placeholder');
+
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        labelText.innerText = `ภาพที่เลือก (บีบอัดเรียบร้อย): ${file.name}`;
+
+        compressImageFile(file, 640, 0.75, function(compressedBase64) {
+          uploadedCoverData = compressedBase64;
+          previewImg.src = uploadedCoverData;
+          previewImg.classList.remove('hidden');
+          previewPlaceholder.classList.add('hidden');
+        });
+      } else {
+        labelText.innerText = `อัปโหลดไฟล์ภาพหน้าปก (.png, .jpg, .webp)`;
+        uploadedCoverData = null;
+        previewImg.classList.add('hidden');
+        previewPlaceholder.classList.remove('hidden');
+      }
+    }
+
+    function handleFileUploadChange(input) {
+      const labelText = document.getElementById('file-label-text');
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        labelText.innerText = `ไฟล์ที่เลือก: ${file.name}`;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          uploadedFileContent = e.target.result;
+        };
+        reader.readAsText(file);
+      } else {
+        labelText.innerText = `คลิกเลือกไฟล์ตัวเกม HTML5 (.html)`;
+        uploadedFileContent = null;
+      }
+    }
+
+    function handleCoverUrlInput(urlVal) {
+      const previewImg = document.getElementById('cover-preview-img');
+      const previewPlaceholder = document.getElementById('cover-preview-placeholder');
+
+      if (urlVal && urlVal.trim() !== '') {
+        previewImg.src = urlVal.trim();
+        previewImg.classList.remove('hidden');
+        previewPlaceholder.classList.add('hidden');
+      } else if (!uploadedCoverData) {
+        previewImg.classList.add('hidden');
+        previewPlaceholder.classList.remove('hidden');
+      }
+    }
+
+    function toggleGameSource(type) {
+      document.getElementById('active-source-type').value = type;
+      
+      const btns = ['file', 'code', 'url'];
+      btns.forEach(b => {
+        const btnElem = document.getElementById(`btn-src-${b}`);
+        const zoneElem = document.getElementById(`zone-src-${b}`);
+        
+        if (b === type) {
+          btnElem.classList.add('bg-white', 'shadow-sm', 'text-indigo-600');
+          btnElem.classList.remove('text-slate-500', 'hover:text-slate-700');
+          zoneElem.classList.remove('hidden');
+          zoneElem.classList.add('block');
+        } else {
+          btnElem.classList.remove('bg-white', 'shadow-sm', 'text-indigo-600');
+          btnElem.classList.add('text-slate-500', 'hover:text-slate-700');
+          zoneElem.classList.add('hidden');
+          zoneElem.classList.remove('block');
+        }
+      });
+    }
+
+    async function handleGameUploadSubmit(e) {
+      e.preventDefault();
+
+      const btn = document.getElementById('btn-save-game');
+      btn.disabled = true;
+      btn.innerHTML = `<span>⏳</span> กำลังประมวลผลไฟล์และอัปโหลดขึ้น Real-time Cloud...`;
+
+      const title = document.getElementById('form-title').value.trim();
+      const developer = document.getElementById('form-developer').value.trim();
+      const category = document.getElementById('form-category').value;
+      const engine = document.getElementById('form-engine').value;
+      const description = document.getElementById('form-description').value.trim();
+      const coverUrlInput = document.getElementById('form-cover-url').value.trim();
+
+      // Get Data Based on Selected Source Type
+      const sourceType = document.getElementById('active-source-type').value;
+      const externalUrl = document.getElementById('form-url').value.trim();
+      const rawCode = document.getElementById('form-raw-code').value.trim();
+      
+      let finalUploadedHtml = null;
+      let finalExternalUrl = null;
+      
+      if (sourceType === 'file') {
+        finalUploadedHtml = uploadedFileContent;
+      } else if (sourceType === 'code') {
+        finalUploadedHtml = rawCode || null;
+      } else if (sourceType === 'url') {
+        finalExternalUrl = externalUrl || null;
+      }
+
+      const newId = gameDatabase.length > 0 ? Math.max(...gameDatabase.map(g => g.id)) + 1 : 1;
+      const finalCoverUrl = uploadedCoverData || coverUrlInput || `https://placehold.co/600x350/1e1b4b/818cf8?text=${encodeURIComponent(title)}`;
+
+      const newGame = {
+        id: newId,
+        title: title,
+        developer: developer,
+        category: category,
+        engine: engine,
+        plays: 0,
+        rating: 0.0,
+        ratingCount: 0,
+        ratingSum: 0,
+        uploadedAt: new Date().toLocaleDateString('th-TH'),
+        description: description || 'ตัวเกมใหม่เพิ่งอัปโหลดเข้าสู่คลัง NTM Arcade',
+        coverUrl: finalCoverUrl,
+        uploadedHtml: finalUploadedHtml,
+        externalUrl: finalExternalUrl,
+        gameType: finalUploadedHtml || finalExternalUrl ? null : 'snake'
+      };
+
+      await syncGameToCloud(newGame);
+
+      btn.disabled = false;
+      btn.innerHTML = `<span>🚀</span> เผยแพร่เกมลง NTM Arcade`;
+      resetGameForm();
+
+      currentCategoryFilter = 'ALL';
+      renderArcadeCategoryPills();
+      filterGames();
+      renderDashboardAnalytics();
+
+      showToastWithPlayAction(`เกม "${title}" อัปโหลดขึ้นระบบ Real-Time เรียบร้อยแล้ว!`, newId);
+      switchTab('arcade');
+    }
+
+    function resetGameForm() {
+      document.getElementById('gameUploadForm').reset();
+      document.getElementById('file-label-text').innerText = `คลิกเลือกไฟล์ตัวเกม HTML5 หรือ AR (.html)`;
+      document.getElementById('cover-file-label-text').innerText = `อัปโหลดไฟล์ภาพหน้าปก (.png, .jpg, .webp)`;
+      document.getElementById('cover-preview-img').classList.add('hidden');
+      document.getElementById('cover-preview-placeholder').classList.remove('hidden');
+      document.getElementById('form-raw-code').value = '';
+      toggleGameSource('file'); // Reset to file upload tab
+      uploadedFileContent = null;
+      uploadedCoverData = null;
+    }
+
+    function showToastWithPlayAction(msg, gameId) {
+      const toast = document.getElementById('toast-notification');
+      const msgElem = document.getElementById('toast-message');
+      const playBtn = document.getElementById('toast-play-btn');
+
+      msgElem.innerText = msg;
+      if (gameId) {
+        playBtn.classList.remove('hidden');
+        playBtn.onclick = function() {
+          launchGameEngine(gameId);
+          hideToast();
+        };
+      } else {
+        playBtn.classList.add('hidden');
+      }
+
+      toast.classList.remove('hidden');
+      setTimeout(() => hideToast(), 8000);
+    }
+
+    function hideToast() {
+      document.getElementById('toast-notification').classList.add('hidden');
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    Object.assign(window, {
+      switchTab,
+      toggleAdminAuth,
+      openAdminLoginModal,
+      closeAdminLoginModal,
+      handleAdminLoginSubmit,
+      filterGames,
+      resetFilters,
+      selectCategoryFilter,
+      handleGameUploadSubmit,
+      handleCoverUploadChange,
+      handleFileUploadChange,
+      handleCoverUrlInput,
+      toggleGameSource,
+      resetGameForm,
+      hideToast,
+      copyActiveGameDirectLink,
+      copyGameDirectLink,
+      toggleFullscreen,
+      closeGameModal,
+      restartCurrentGame,
+      openEditGameModal,
+      openDeleteGameModal,
+      closeDeleteModal,
+      executeDeleteGame,
+      closeAdminEditModal,
+      handleEditCoverUploadChange,
+      handleEditCoverUrlInput,
+      handleSaveEditedGame,
+      submitGameRating,
+      launchGameEngine,
+      requestParentCameraPermission
+    });
+  </script>
+</body>
+</html>
