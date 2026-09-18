@@ -918,8 +918,13 @@
     // Real-time Cloud Sync Initialization Function
     async function initCloudSync() {
       if (!firebaseConfig) {
-        console.warn("Firebase config not available, using in-memory state.");
-        gameDatabase = [...defaultGameDatabase];
+        console.warn("Firebase config not available, using LocalStorage fallback.");
+        const storedGames = localStorage.getItem('ntm_arcade_games_v1');
+        if (storedGames) {
+          gameDatabase = JSON.parse(storedGames);
+        } else {
+          gameDatabase = [...defaultGameDatabase];
+        }
         filterGames();
         renderDashboardAnalytics();
         return;
@@ -967,7 +972,8 @@
 
       } catch (err) {
         console.error("Firebase Cloud Auth Error:", err);
-        gameDatabase = [...defaultGameDatabase];
+        const storedGames = localStorage.getItem('ntm_arcade_games_v1');
+        gameDatabase = storedGames ? JSON.parse(storedGames) : [...defaultGameDatabase];
         filterGames();
         renderDashboardAnalytics();
       }
@@ -975,7 +981,17 @@
 
     // Real-Time Save/Update Helper to Firestore
     async function syncGameToCloud(game) {
-      if (!db || !currentUser) return;
+      if (!db || !currentUser) {
+        // ถ้าไม่มี Firebase ให้บันทึกลงใน LocalStorage ของเบราว์เซอร์ (หน่วยความจำถาวรในเครื่อง)
+        const existingIndex = gameDatabase.findIndex(g => g.id === game.id);
+        if (existingIndex >= 0) {
+          gameDatabase[existingIndex] = game;
+        } else {
+          gameDatabase.unshift(game);
+        }
+        localStorage.setItem('ntm_arcade_games_v1', JSON.stringify(gameDatabase));
+        return;
+      }
       try {
         const gameDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', String(game.id));
         await setDoc(gameDocRef, game);
@@ -986,7 +1002,12 @@
 
     // Real-Time Delete Helper from Firestore
     async function deleteGameFromCloud(gameId) {
-      if (!db || !currentUser) return;
+      if (!db || !currentUser) {
+        // อัปเดตการลบข้อมูลลงใน LocalStorage
+        const updatedGames = gameDatabase.filter(g => g.id !== gameId);
+        localStorage.setItem('ntm_arcade_games_v1', JSON.stringify(updatedGames));
+        return;
+      }
       try {
         const gameDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'games', String(gameId));
         await deleteDoc(gameDocRef);
