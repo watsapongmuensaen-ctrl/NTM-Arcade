@@ -6,10 +6,10 @@
     <title>NTM EduGame Hub - คลังเกมสื่อการเรียนรู้</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Prompt & Kanit -->
+    <!-- Google Fonts: รองรับหลายฟอนต์ภาษาไทยสำหรับปรับแต่งในหลังบ้าน -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Itim&family=Kanit:wght@400;500;600;700&family=Mali:wght@400;500;600;700&family=Mitr:wght@400;500;600&family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
@@ -37,9 +37,24 @@
     </script>
 
     <style>
+        :root {
+            --theme-font: 'Prompt', sans-serif;
+            --theme-heading-font: 'Kanit', sans-serif;
+            --theme-primary: #4f46e5;
+            --theme-primary-hover: #4338ca;
+            --theme-primary-light: #eef2ff;
+            --theme-primary-border: #c7d2fe;
+            --theme-primary-shadow: rgba(79, 70, 229, 0.22);
+            --theme-header-bg: rgba(255, 255, 255, 0.95);
+            --theme-header-text: #0f172a;
+            --theme-header-subtext: #475569;
+        }
         body {
-            font-family: 'Prompt', sans-serif;
+            font-family: var(--theme-font);
             background-color: #f8fafc;
+        }
+        .font-display, h1, h2, h3 {
+            font-family: var(--theme-heading-font);
         }
         .hero-gradient {
             background: linear-gradient(135deg, #1e1b4b 0%, #312e81 45%, #4338ca 100%);
@@ -49,7 +64,29 @@
         }
         .card-hover:hover {
             transform: translateY(-6px);
-            box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.14), 0 8px 10px -6px rgba(79, 70, 229, 0.08);
+            box-shadow: 0 20px 25px -5px var(--theme-primary-shadow), 0 8px 10px -6px var(--theme-primary-shadow);
+        }
+        /* ระบบผูกสีปุ่มกด ป้ายหมวดหมู่ และไอคอนทั้งหมดให้เปลี่ยนตามสีที่ผู้พัฒนาเลือก */
+        .bg-indigo-600, .bg-indigo-600\/90 {
+            background-color: var(--theme-primary) !important;
+        }
+        .hover\:bg-indigo-700:hover, .hover\:bg-indigo-500:hover {
+            background-color: var(--theme-primary-hover) !important;
+        }
+        .text-indigo-600, .text-indigo-500, .text-indigo-700, .hover\:text-indigo-600:hover {
+            color: var(--theme-primary) !important;
+        }
+        .bg-indigo-50, .bg-indigo-50\/40, .bg-indigo-50\/50, .hover\:bg-indigo-50:hover {
+            background-color: var(--theme-primary-light) !important;
+        }
+        .border-indigo-200, .border-indigo-200\/80 {
+            border-color: var(--theme-primary-border) !important;
+        }
+        .shadow-indigo-600\/20, .shadow-indigo-500\/20 {
+            --tw-shadow-color: var(--theme-primary-shadow) !important;
+        }
+        .focus\:ring-indigo-500:focus {
+            --tw-ring-color: var(--theme-primary) !important;
         }
         ::-webkit-scrollbar {
             width: 8px;
@@ -75,19 +112,51 @@
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col">
 
-    <!-- Top Navigation Bar -->
-    <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
-            <!-- Brand Logo -->
-            <div class="flex items-center gap-3 cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
-                    <i class="fa-solid fa-gamepad text-lg"></i>
+    <!-- Hidden File Input สำหรับคลิกเปลี่ยนรูปโลโก้ได้โดยตรง -->
+    <input type="file" id="globalLogoFileInput" accept="image/*" onchange="handleLogoFileUpload(event)" class="hidden">
+
+    <!-- Top Navigation Bar (แถบบนของเว็บไซต์ ปรับสีพื้นหลัง สีตัวอักษร ฟอนต์ และอัปโหลดรูปโลโก้ใดก็ได้) -->
+    <header id="mainHeaderBar" class="sticky top-0 z-30 backdrop-blur-md border-b border-slate-200/80 shadow-sm transition-colors duration-300" style="background-color: var(--theme-header-bg);">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+            <!-- Brand Logo Slot ในแถบบน (รองรับการอัปโหลดรูปภาพทุกชนิด) -->
+            <div class="flex items-center gap-3 sm:gap-3.5">
+                <div class="w-14 h-16 sm:w-16 sm:h-[68px] flex items-center justify-center shrink-0 relative group">
+                    <img
+                        id="headerCustomLogo"
+                        src=""
+                        alt="โลโก้เว็บไซต์"
+                        class="hidden w-full h-full object-contain drop-shadow-sm cursor-pointer transition-transform group-hover:scale-105"
+                        onclick="handleHeaderLogoClick()"
+                    >
+                    <!-- ปุ่ม Overlay เปลี่ยนรูปโลโก้ (แสดงเมื่อปลดล็อกโหมดผู้พัฒนาแล้วนำเมาส์ไปชี้ที่โลโก้) -->
+                    <button
+                        type="button"
+                        id="devLogoEditOverlay"
+                        onclick="document.getElementById('globalLogoFileInput').click()"
+                        class="hidden absolute inset-0 rounded-xl bg-slate-900/70 text-white flex-col items-center justify-center text-[10px] font-medium opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                        title="คลิกเพื่ออัปโหลดเปลี่ยนรูปโลโก้"
+                    >
+                        <i class="fa-solid fa-camera text-xs mb-0.5"></i>
+                        <span>เปลี่ยนรูป</span>
+                    </button>
+                    <!-- ช่องอัปโหลดรูปโลโก้ (แสดงเมื่อยังไม่มีไฟล์รูปโลโก้) -->
+                    <label
+                        id="headerLogoFallbackPicker"
+                        class="hidden w-full h-full rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-white/80 hover:bg-indigo-50 text-slate-700 flex-col items-center justify-center text-[10px] font-semibold cursor-pointer text-center leading-tight p-1 shadow-sm transition"
+                        title="คลิกเพื่ออัปโหลดรูปโลโก้ใส่ในแถบบน"
+                    >
+                        <i class="fa-solid fa-image text-indigo-600 text-sm mb-0.5"></i>
+                        <span>อัปโหลดรูป</span>
+                        <input type="file" accept="image/*" onchange="handleLogoFileUpload(event)" class="hidden">
+                    </label>
                 </div>
-                <div>
+                <div class="cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
                     <div class="flex items-center gap-2">
-                        <span class="font-display font-bold text-lg sm:text-xl text-slate-900 tracking-tight">NTM <span class="text-indigo-600">EduGame Hub</span></span>
+                        <span id="headerBrandTitle" class="font-display font-bold text-lg sm:text-2xl tracking-tight leading-none" style="color: var(--theme-header-text);">
+                            <span id="headerTitleMain">NTM</span> <span id="headerTitleHighlight" class="text-indigo-600">EduGame Hub</span>
+                        </span>
                     </div>
-                    <p class="text-xs text-slate-500 hidden sm:block">คลังสื่อการเรียนรู้รูปแบบเกมออนไลน์</p>
+                    <p id="headerSubTitle" class="text-[11px] sm:text-xs font-medium mt-1" style="color: var(--theme-header-subtext);">โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)</p>
                 </div>
             </div>
 
@@ -134,9 +203,24 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 relative z-10">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div class="lg:col-span-7 space-y-4">
-                    <h1 class="font-display text-3xl sm:text-5xl font-bold leading-tight tracking-tight">
-                        <span id="heroTitleMain">NTM</span> <span id="heroTitleHighlight" class="text-amber-300">EduGame Hub</span>
-                    </h1>
+                    <div class="flex items-center gap-4 sm:gap-5">
+                        <!-- โลโก้ในแบนเนอร์หลัก (ซิงค์ตามรูปโลโก้ที่อัปโหลด หรือเลือกซ่อนได้) -->
+                        <div id="heroLogoWrapper" class="hidden w-24 h-28 sm:w-28 sm:h-32 shrink-0 flex items-center justify-center relative">
+                            <img
+                                id="heroCustomLogo"
+                                src=""
+                                alt="โลโก้เว็บไซต์"
+                                class="hidden w-full h-full object-contain"
+                                style="filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 6px rgba(255,255,255,0.75)) drop-shadow(0 6px 12px rgba(0,0,0,0.35));"
+                            >
+                        </div>
+                        <div>
+                            <p id="heroSchoolText" class="text-xs sm:text-sm font-medium text-amber-300 tracking-wide">โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)</p>
+                            <h1 id="heroHeadingContainer" class="font-display text-3xl sm:text-5xl font-bold leading-tight tracking-tight">
+                                <span id="heroTitleMain">NTM</span> <span id="heroTitleHighlight" class="text-amber-300">EduGame Hub</span>
+                            </h1>
+                        </div>
+                    </div>
                     <p id="heroDescText" class="text-indigo-100 text-sm sm:text-base leading-relaxed max-w-2xl">
                         แหล่งรวบรวมสื่อการเรียนรู้รูปแบบเกมอินเทอร์แอคทีฟ เสริมสร้างทักษะการคิดวิเคราะห์ การแก้ปัญหา และการเรียนรู้ทุกกลุ่มสาระอย่างสนุกสนาน เข้าเล่นได้ทันทีทุกอุปกรณ์
                     </p>
@@ -565,76 +649,197 @@
 
                 <!-- TAB 2: ตกแต่งพื้นหลัง สี ฉากหลัง คำอธิบายเว็บ และเปลี่ยนรหัสผ่านผู้พัฒนา -->
                 <div id="adminPanelTheme" class="hidden space-y-6">
-                    <!-- Section A: Site Colors & Background Image -->
-                    <div class="bg-indigo-50/50 border border-indigo-200/80 rounded-2xl p-5 space-y-5">
-                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-200/60 pb-3">
+                    <!-- Section A: Site Colors, Buttons, Header, Font, Logo & Background Image -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-6">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
                             <div>
                                 <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
                                     <i class="fa-solid fa-paintbrush text-indigo-600"></i>
-                                    ปรับแต่งสีฉากหลัง รูปพื้นหลัง (Background) และข้อความหน้าเว็บ
+                                    ปรับแต่งโลโก้ ฟอนต์ สีปุ่มกด สีแถบด้านบน และฉากหลังทั้งหมด
                                 </h3>
-                                <p class="text-xs text-slate-500">ออกแบบบรรยากาศเว็บไซต์ได้ตามต้องการ สามารถสลับสีพื้นหลังหรือใส่ภาพ Background ได้ทันที</p>
+                                <p class="text-xs text-slate-500">ปรับเปลี่ยนโทนสีได้ทุกจุด ทั้งสีปุ่มกด (เช่น ปุ่มเข้าเล่นเกม/อัปโหลดเกม) แถบบน ฟอนต์ตัวหนังสือ และรูปโลโก้</p>
                             </div>
                             <button type="button" onclick="resetSiteCustomization()" class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 text-xs font-medium transition">
-                                <i class="fa-solid fa-rotate-left mr-1"></i> คืนค่าเริ่มต้น
+                                <i class="fa-solid fa-rotate-left mr-1"></i> คืนค่าเริ่มต้นทั้งหมด
                             </button>
                         </div>
 
-                        <!-- Preset Color Themes -->
+                        <!-- 1. Preset Color Themes (เปลี่ยนครบทั้งสีพื้นหลัง + แบนเนอร์ + สีปุ่มกด + สีแถบบน) -->
                         <div class="space-y-2">
-                            <label class="block text-xs font-semibold text-slate-700">ธีมสีสำเร็จรูป (คลิกเลือกได้ทันที):</label>
+                            <label class="block text-xs font-semibold text-slate-700">ธีมสีสำเร็จรูป (เปลี่ยนทั้งสีปุ่มกด แถบบน แบนเนอร์ และพื้นหลังพร้อมกัน):</label>
                             <div class="flex flex-wrap gap-2">
-                                <button type="button" onclick="applyThemePreset('#f8fafc', '#1e1b4b', '#4338ca')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
-                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-indigo-950 to-indigo-600"></span> ครามมาตรฐาน (Default)
+                                <button type="button" onclick="applyThemePreset('#f8fafc', '#1e1b4b', '#4338ca', '#4f46e5', '#ffffff', '#0f172a', '#ffffff', '#fcd34d')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-indigo-600"></span> ครามมาตรฐาน (Default)
                                 </button>
-                                <button type="button" onclick="applyThemePreset('#f0fdf4', '#064e3b', '#059669')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
-                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-emerald-950 to-emerald-600"></span> เขียวธรรมชาติวิทย์
+                                <button type="button" onclick="applyThemePreset('#f0fdf4', '#064e3b', '#047857', '#059669', '#ffffff', '#064e3b', '#ffffff', '#fde047')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-emerald-600"></span> เขียวธรรมชาติวิทย์ (ปุ่มสีเขียว)
                                 </button>
-                                <button type="button" onclick="applyThemePreset('#f0f9ff', '#0c4a6e', '#0284c7')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-sky-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
-                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-sky-950 to-sky-600"></span> ฟ้าอวกาศเทคโนโลยี
+                                <button type="button" onclick="applyThemePreset('#f0f9ff', '#0c4a6e', '#0369a1', '#0284c7', '#ffffff', '#0c4a6e', '#ffffff', '#7dd3fc')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-sky-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-sky-600"></span> ฟ้าอวกาศ (ปุ่มสีฟ้าสด)
                                 </button>
-                                <button type="button" onclick="applyThemePreset('#fdf4ff', '#4a044e', '#9333ea')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-purple-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
-                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-fuchsia-950 to-purple-600"></span> ม่วงแฟนตาซีเกมเมอร์
+                                <button type="button" onclick="applyThemePreset('#fdf4ff', '#4a044e', '#7e22ce', '#9333ea', '#ffffff', '#3b0764', '#ffffff', '#f0abfc')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-purple-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-purple-600"></span> ม่วงแฟนตาซี (ปุ่มสีม่วง)
                                 </button>
-                                <button type="button" onclick="applyThemePreset('#fffbeb', '#78350f', '#d97706')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-amber-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
-                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-amber-900 to-amber-600"></span> ส้มทองอบอุ่น
+                                <button type="button" onclick="applyThemePreset('#fffbeb', '#7c2d12', '#b45309', '#ea580c', '#ffffff', '#431407', '#ffffff', '#fde68a')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-amber-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-orange-600"></span> ส้มทองโรงเรียน (ปุ่มสีส้มแสด)
                                 </button>
-                                <button type="button" onclick="applyThemePreset('#0f172a', '#020617', '#1e1b4b')" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white border border-slate-700 text-xs font-medium flex items-center gap-2 shadow-sm transition">
-                                    <span class="w-4 h-4 rounded-full bg-slate-950 border border-white/30"></span> โหมดมืด (Dark Space)
+                                <button type="button" onclick="applyThemePreset('#fff1f2', '#881337', '#be123c', '#e11d48', '#ffffff', '#4c0519', '#ffffff', '#fecdd3')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-rose-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-rose-600"></span> ชมพูโรสโกลด์ (ปุ่มสีชมพูเข้ม)
+                                </button>
+                                <button type="button" onclick="applyThemePreset('#0f172a', '#020617', '#1e293b', '#f59e0b', '#0f172a', '#f8fafc', '#ffffff', '#fbbf24')" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white border border-slate-700 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-amber-500 border border-white/30"></span> โหมดมืด (ปุ่มสีทอง)
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Custom Color Pickers -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                                <label class="block text-xs font-semibold text-slate-700">สีพื้นหลังหน้าเว็บ (Body Background)</label>
-                                <div class="flex items-center gap-2">
-                                    <input type="color" id="customBodyBgColor" value="#f8fafc" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300">
-                                    <input type="text" id="customBodyBgText" value="#f8fafc" oninput="document.getElementById('customBodyBgColor').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
-                                </div>
-                            </div>
-                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                                <label class="block text-xs font-semibold text-slate-700">สีแบนเนอร์หลัก (ฝั่งซ้าย)</label>
-                                <div class="flex items-center gap-2">
-                                    <input type="color" id="customHeroColorStart" value="#1e1b4b" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300">
-                                    <input type="text" id="customHeroColorStartText" value="#1e1b4b" oninput="document.getElementById('customHeroColorStart').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
-                                </div>
-                            </div>
-                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
-                                <label class="block text-xs font-semibold text-slate-700">สีแบนเนอร์หลัก (ฝั่งขวา)</label>
-                                <div class="flex items-center gap-2">
-                                    <input type="color" id="customHeroColorEnd" value="#4338ca" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300">
-                                    <input type="text" id="customHeroColorEndText" value="#4338ca" oninput="document.getElementById('customHeroColorEnd').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Background Image Upload & URL (Hero Banner & Page Background) -->
+                        <!-- 2. ช่องอัปโหลดรูปโลโก้ (รองรับการอัปโหลดรูปใดก็ได้ หรือวางลิงก์รูปภาพ) -->
                         <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-800">ภาพพื้นหลัง (Background Image)</label>
+                                    <label class="block text-xs font-bold text-slate-800">
+                                        <i class="fa-solid fa-image text-indigo-600 mr-1"></i> รูปภาพบริเวณช่องโลโก้ (อัปโหลดรูปอื่นๆ ได้ตามต้องการ)
+                                    </label>
+                                    <p class="text-[11px] text-slate-500">สามารถอัปโหลดรูปโลโก้ ตราประจำโรงเรียน รูปไอคอนเกม หรือวางลิงก์รูปภาพใดก็ได้</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-lg" title="ติ๊กเลือกหากต้องการตัดพื้นหลังสีขาวรอบนอกออกอัตโนมัติ">
+                                        <input type="checkbox" id="removeLogoBgCheckbox" onchange="reprocessSavedLogo()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                        <span>ตัดพื้นหลังสีขาวออก</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-lg">
+                                        <input type="checkbox" id="showHeroLogoCheckbox" checked onchange="previewCustomTheme()" class="rounded text-indigo-600 focus:ring-indigo-500">
+                                        <span>แสดงโลโก้ในแบนเนอร์ด้วย</span>
+                                    </label>
+                                    <button type="button" onclick="downloadHtmlWithEmbeddedLogo()" id="embedLogoHtmlBtn" class="hidden px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition">
+                                        <i class="fa-solid fa-file-code mr-1"></i> ดาวน์โหลด index.html (ฝังรูปนี้ถาวร)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+                                <!-- ตัวอย่างรูปโลโก้ปัจจุบัน -->
+                                <div class="sm:col-span-3 flex flex-col items-center justify-center p-2 rounded-xl bg-slate-100 border border-slate-200 h-24 relative">
+                                    <img id="adminLogoPreviewImg" src="" alt="Logo Preview" class="hidden max-h-20 max-w-full object-contain">
+                                    <span id="adminLogoPreviewPlaceholder" class="text-[11px] text-slate-400 text-center px-2">ยังไม่ได้เลือกรูปโลโก้</span>
+                                </div>
+                                <!-- ปุ่มอัปโหลดไฟล์ + ช่องวาง URL -->
+                                <div class="sm:col-span-9 space-y-2">
+                                    <div class="flex flex-wrap gap-2">
+                                        <label class="flex-1 min-w-[200px] flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-indigo-300 hover:border-indigo-500 rounded-xl bg-indigo-50/50 cursor-pointer text-xs font-semibold text-indigo-700 transition">
+                                            <i class="fa-solid fa-upload"></i>
+                                            <span>คลิกเลือกไฟล์รูปภาพจากเครื่อง (JPG, PNG, GIF, SVG)</span>
+                                            <input type="file" accept="image/*" onchange="handleLogoFileUpload(event)" class="hidden">
+                                        </label>
+                                        <button type="button" onclick="clearCustomLogo()" class="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium transition">
+                                            <i class="fa-solid fa-trash-can mr-1"></i> ซ่อน/ลบรูปโลโก้
+                                        </button>
+                                    </div>
+                                    <input
+                                        type="url"
+                                        id="customLogoUrlInput"
+                                        oninput="handleLogoUrlInput(this.value)"
+                                        placeholder="หรือวางลิงก์รูปภาพโลโก้โดยตรง เช่น https://.../logo.png"
+                                        class="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. ตั้งค่าฟอนต์ตัวอักษร (Font) และสีปุ่มกด/แถบด้านบน -->
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-4">
+                            <h4 class="text-xs font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-font text-indigo-600"></i>
+                                ฟอนต์ตัวหนังสือ (Font) สีปุ่มกด และสีแถบเมนูด้านบน
+                            </h4>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <!-- เลือกฟอนต์ทั้งเว็บ -->
+                                <div class="space-y-1.5">
+                                    <label class="block text-xs font-semibold text-slate-700">ฟอนต์ตัวอักษรหลัก (Font)</label>
+                                    <select id="customFontFamily" onchange="previewCustomTheme()" class="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                        <option value="'Prompt', sans-serif">Prompt (ทันสมัย อ่านง่าย)</option>
+                                        <option value="'Kanit', sans-serif">Kanit (คณิต คมชัด)</option>
+                                        <option value="'Sarabun', sans-serif">Sarabun (สารบรรณ ทางการ)</option>
+                                        <option value="'Mitr', sans-serif">Mitr (มิตร หัวกลมเป็นมิตร)</option>
+                                        <option value="'Chakra Petch', sans-serif">Chakra Petch (เกมไซไฟ-เทค)</option>
+                                        <option value="'Mali', cursive">Mali (มะลิ ลายมือเด็กน่ารัก)</option>
+                                        <option value="'Itim', cursive">Itim (ไอติม สนุกสนาน)</option>
+                                    </select>
+                                </div>
+
+                                <!-- สีปุ่มกดและไอคอนทั้งหมด -->
+                                <div class="space-y-1.5">
+                                    <label class="block text-xs font-semibold text-slate-700">สีปุ่มกดทั้งหมด & จุดเน้น</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="customPrimaryColor" value="#4f46e5" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300 shrink-0">
+                                        <input type="text" id="customPrimaryColorText" value="#4f46e5" oninput="document.getElementById('customPrimaryColor').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                    </div>
+                                </div>
+
+                                <!-- สีพื้นหลังแถบด้านบน -->
+                                <div class="space-y-1.5">
+                                    <label class="block text-xs font-semibold text-slate-700">สีพื้นหลังแถบด้านบน (Header)</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="customHeaderBgColor" value="#ffffff" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300 shrink-0">
+                                        <input type="text" id="customHeaderBgText" value="#ffffff" oninput="document.getElementById('customHeaderBgColor').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                    </div>
+                                </div>
+
+                                <!-- สีตัวหนังสือแถบด้านบน -->
+                                <div class="space-y-1.5">
+                                    <label class="block text-xs font-semibold text-slate-700">สีตัวหนังสือแถบด้านบน</label>
+                                    <div class="flex items-center gap-2">
+                                        <input type="color" id="customHeaderTextColor" value="#0f172a" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300 shrink-0">
+                                        <input type="text" id="customHeaderTextColorText" value="#0f172a" oninput="document.getElementById('customHeaderTextColor').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. สีฉากหลังหน้าเว็บ & สีแบนเนอร์ & สีตัวหนังสือในแบนเนอร์ -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีพื้นหลังเว็บ (Body)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customBodyBgColor" value="#f8fafc" onchange="previewCustomTheme()" class="w-9 h-8 rounded cursor-pointer border border-slate-300 shrink-0">
+                                    <input type="text" id="customBodyBgText" value="#f8fafc" oninput="document.getElementById('customBodyBgColor').value=this.value; previewCustomTheme();" class="w-full px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีแบนเนอร์ (ฝั่งซ้าย)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customHeroColorStart" value="#1e1b4b" onchange="previewCustomTheme()" class="w-9 h-8 rounded cursor-pointer border border-slate-300 shrink-0">
+                                    <input type="text" id="customHeroColorStartText" value="#1e1b4b" oninput="document.getElementById('customHeroColorStart').value=this.value; previewCustomTheme();" class="w-full px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีแบนเนอร์ (ฝั่งขวา)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customHeroColorEnd" value="#4338ca" onchange="previewCustomTheme()" class="w-9 h-8 rounded cursor-pointer border border-slate-300 shrink-0">
+                                    <input type="text" id="customHeroColorEndText" value="#4338ca" oninput="document.getElementById('customHeroColorEnd').value=this.value; previewCustomTheme();" class="w-full px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีตัวหนังสือแบนเนอร์</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customHeroTextColor" value="#ffffff" onchange="previewCustomTheme()" class="w-9 h-8 rounded cursor-pointer border border-slate-300 shrink-0">
+                                    <input type="text" id="customHeroTextColorText" value="#ffffff" oninput="document.getElementById('customHeroTextColor').value=this.value; previewCustomTheme();" class="w-full px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีคำเน้นไฮไลท์แบนเนอร์</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customHeroHighlightColor" value="#fcd34d" onchange="previewCustomTheme()" class="w-9 h-8 rounded cursor-pointer border border-slate-300 shrink-0">
+                                    <input type="text" id="customHeroHighlightColorText" value="#fcd34d" oninput="document.getElementById('customHeroHighlightColor').value=this.value; previewCustomTheme();" class="w-full px-2 py-1 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 5. ภาพพื้นหลัง (Background Image) -->
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-800">ภาพพื้นหลัง (Background Wallpaper)</label>
                                     <p class="text-[11px] text-slate-500">เลือกอัปโหลดภาพจากเครื่อง หรือวางลิงก์รูปภาพเพื่อใช้เป็นฉากหลังแบนเนอร์หรือพื้นหลังทั้งเว็บ</p>
                                 </div>
                                 <div class="flex items-center gap-2">
@@ -664,10 +869,10 @@
                             </div>
                         </div>
 
-                        <!-- Site Title & Description Customization -->
+                        <!-- 6. ข้อความชื่อเว็บ ชื่อหน่วยงาน และคำอธิบาย -->
                         <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
-                            <label class="block text-xs font-semibold text-slate-800">ข้อความหัวข้อและคำอธิบายคลังเกมหน้าแรก</label>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <label class="block text-xs font-semibold text-slate-800">ข้อความชื่อเว็บไซต์ ชื่อโรงเรียน และคำอธิบายหน้าแรก</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
                                     <label class="block text-[11px] text-slate-500 mb-1">ชื่อหัวข้อหลัก (ส่วนหน้า)</label>
                                     <input type="text" id="customHeroTitleMain" value="NTM" oninput="previewCustomTheme()" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
@@ -675,6 +880,10 @@
                                 <div>
                                     <label class="block text-[11px] text-slate-500 mb-1">ชื่อหัวข้อสีไฮไลท์ (ส่วนหลัง)</label>
                                     <input type="text" id="customHeroTitleHighlight" value="EduGame Hub" oninput="previewCustomTheme()" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-500 mb-1">ข้อความชื่อโรงเรียน / หน่วยงาน</label>
+                                    <input type="text" id="customSchoolSubtitle" value="โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)" oninput="previewCustomTheme()" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
                                 </div>
                             </div>
                             <div>
@@ -1001,9 +1210,11 @@ function doPost(e) {
     <!-- Footer with Discreet Lock Icon (🔒) for Admin -->
     <footer class="bg-white border-t border-slate-200 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-            <div class="flex items-center gap-2">
-                <span class="w-6 h-6 rounded-md bg-indigo-600 text-white flex items-center justify-center font-bold">N</span>
-                <span><strong>NTM EduGame Hub</strong> — คลังสื่อการเรียนรู้รูปแบบเกมออนไลน์</span>
+            <div class="flex items-center gap-2.5">
+                <div id="footerLogoWrapper" class="hidden w-9 h-11 flex items-center justify-center overflow-hidden shrink-0">
+                    <img id="footerCustomLogo" src="" alt="โลโก้โรงเรียนวัดเนินตามาก" class="hidden w-full h-full object-contain">
+                </div>
+                <span><strong>NTM EduGame Hub</strong> — โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)</span>
             </div>
             <div class="flex items-center gap-3">
                 <span>พัฒนาเพื่อการศึกษา</span>
@@ -1033,6 +1244,7 @@ function doPost(e) {
         const DEFAULT_GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDxWmmCBa3ttidrzSOGpyFiwQoDUZGvBhMSxNH4LFVXaD6cIGqv_htfxkz29xyLe8x/exec";
         const DEFAULT_GOOGLE_CSV_URL = "";    // ทางเลือกสำรอง: ลิงก์ CSV จากการ Publish to Web
         const DEFAULT_DEV_PIN = "12345";      // รหัสผ่านผู้พัฒนาเริ่มต้น
+        const DEFAULT_EMBEDDED_LOGO_DATA = ""; // ข้อมูลรูปโลโก้ฝังถาวรในโค้ดเมื่อกดดาวน์โหลด index.html
 
         // LocalStorage Keys
         const STORAGE_GAMES_KEY = 'ntm_edugame_hub_games_v1';
@@ -1045,10 +1257,22 @@ function doPost(e) {
             bodyBgColor: '#f8fafc',
             heroColorStart: '#1e1b4b',
             heroColorEnd: '#4338ca',
+            primaryColor: '#4f46e5',
+            headerBgColor: '#ffffff',
+            headerTextColor: '#0f172a',
+            heroTextColor: '#ffffff',
+            heroHighlightColor: '#fcd34d',
+            fontFamily: "'Prompt', sans-serif",
             bgImageData: '',
+            logoImageData: '',
+            logoRawData: '',
+            removeLogoBg: false,
+            showHeroLogo: true,
+            logoHidden: false,
             bgTarget: 'hero',
             heroTitleMain: 'NTM',
             heroTitleHighlight: 'EduGame Hub',
+            schoolSubtitle: 'โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)',
             heroDesc: 'แหล่งรวบรวมสื่อการเรียนรู้รูปแบบเกมอินเทอร์แอคทีฟ เสริมสร้างทักษะการคิดวิเคราะห์ การแก้ปัญหา และการเรียนรู้ทุกกลุ่มสาระอย่างสนุกสนาน เข้าเล่นได้ทันทีทุกอุปกรณ์'
         };
 
@@ -1160,13 +1384,32 @@ function doPost(e) {
 
         function updateDevLockBadge() {
             const badge = document.getElementById('devUnlockedBadge');
-            if (!badge) return;
+            const logoOverlay = document.getElementById('devLogoEditOverlay');
+            if (badge) {
+                if (isDevUnlocked) {
+                    badge.classList.remove('hidden');
+                    badge.classList.add('flex');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('flex');
+                }
+            }
+            if (logoOverlay) {
+                if (isDevUnlocked) {
+                    logoOverlay.classList.remove('hidden');
+                    logoOverlay.classList.add('flex');
+                } else {
+                    logoOverlay.classList.add('hidden');
+                    logoOverlay.classList.remove('flex');
+                }
+            }
+        }
+
+        function handleHeaderLogoClick() {
             if (isDevUnlocked) {
-                badge.classList.remove('hidden');
-                badge.classList.add('flex');
+                document.getElementById('globalLogoFileInput').click();
             } else {
-                badge.classList.add('hidden');
-                badge.classList.remove('flex');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
 
@@ -1204,28 +1447,124 @@ function doPost(e) {
             }
             populateThemeFormInputs();
             applyThemeToDOM(siteTheme);
+            initDefaultLogoLoader();
+        }
+
+        function initDefaultLogoLoader() {
+            if (siteTheme.logoHidden) return;
+            const activeLogo = siteTheme.logoImageData || DEFAULT_EMBEDDED_LOGO_DATA;
+            if (activeLogo) {
+                setAllLogoElementsSrc(activeLogo);
+                return;
+            }
+            const headerImg = document.getElementById('headerCustomLogo');
+            if (!headerImg) return;
+            headerImg.onload = function() {
+                onDefaultLogoFileLoaded(headerImg);
+            };
+            headerImg.onerror = function() {
+                onDefaultLogoFileError(headerImg);
+            };
+            headerImg.src = 'กิจกรรมข้าวสารสัมพันธ์ 69_3.jpg';
         }
 
         function populateThemeFormInputs() {
             const setVal = (id, val) => {
                 const el = document.getElementById(id);
-                if (el) el.value = val;
+                if (el && val !== undefined && val !== null) el.value = val;
             };
-            setVal('customBodyBgColor', siteTheme.bodyBgColor);
-            setVal('customBodyBgText', siteTheme.bodyBgColor);
-            setVal('customHeroColorStart', siteTheme.heroColorStart);
-            setVal('customHeroColorStartText', siteTheme.heroColorStart);
-            setVal('customHeroColorEnd', siteTheme.heroColorEnd);
-            setVal('customHeroColorEndText', siteTheme.heroColorEnd);
+            setVal('customBodyBgColor', siteTheme.bodyBgColor || DEFAULT_SITE_THEME.bodyBgColor);
+            setVal('customBodyBgText', siteTheme.bodyBgColor || DEFAULT_SITE_THEME.bodyBgColor);
+            setVal('customHeroColorStart', siteTheme.heroColorStart || DEFAULT_SITE_THEME.heroColorStart);
+            setVal('customHeroColorStartText', siteTheme.heroColorStart || DEFAULT_SITE_THEME.heroColorStart);
+            setVal('customHeroColorEnd', siteTheme.heroColorEnd || DEFAULT_SITE_THEME.heroColorEnd);
+            setVal('customHeroColorEndText', siteTheme.heroColorEnd || DEFAULT_SITE_THEME.heroColorEnd);
+
+            setVal('customPrimaryColor', siteTheme.primaryColor || DEFAULT_SITE_THEME.primaryColor);
+            setVal('customPrimaryColorText', siteTheme.primaryColor || DEFAULT_SITE_THEME.primaryColor);
+            setVal('customHeaderBgColor', siteTheme.headerBgColor || DEFAULT_SITE_THEME.headerBgColor);
+            setVal('customHeaderBgText', siteTheme.headerBgColor || DEFAULT_SITE_THEME.headerBgColor);
+            setVal('customHeaderTextColor', siteTheme.headerTextColor || DEFAULT_SITE_THEME.headerTextColor);
+            setVal('customHeaderTextColorText', siteTheme.headerTextColor || DEFAULT_SITE_THEME.headerTextColor);
+            setVal('customHeroTextColor', siteTheme.heroTextColor || DEFAULT_SITE_THEME.heroTextColor);
+            setVal('customHeroTextColorText', siteTheme.heroTextColor || DEFAULT_SITE_THEME.heroTextColor);
+            setVal('customHeroHighlightColor', siteTheme.heroHighlightColor || DEFAULT_SITE_THEME.heroHighlightColor);
+            setVal('customHeroHighlightColorText', siteTheme.heroHighlightColor || DEFAULT_SITE_THEME.heroHighlightColor);
+            setVal('customFontFamily', siteTheme.fontFamily || DEFAULT_SITE_THEME.fontFamily);
+
             setVal('customBgTarget', siteTheme.bgTarget || 'hero');
             setVal('customBgImageUrlInput', siteTheme.bgImageData && siteTheme.bgImageData.startsWith('http') ? siteTheme.bgImageData : '');
-            setVal('customHeroTitleMain', siteTheme.heroTitleMain);
-            setVal('customHeroTitleHighlight', siteTheme.heroTitleHighlight);
-            setVal('customHeroDescInput', siteTheme.heroDesc);
+            setVal('customLogoUrlInput', siteTheme.logoImageData && siteTheme.logoImageData.startsWith('http') ? siteTheme.logoImageData : '');
+            setVal('customHeroTitleMain', siteTheme.heroTitleMain ?? DEFAULT_SITE_THEME.heroTitleMain);
+            setVal('customHeroTitleHighlight', siteTheme.heroTitleHighlight ?? DEFAULT_SITE_THEME.heroTitleHighlight);
+            setVal('customSchoolSubtitle', siteTheme.schoolSubtitle ?? DEFAULT_SITE_THEME.schoolSubtitle);
+            setVal('customHeroDescInput', siteTheme.heroDesc ?? DEFAULT_SITE_THEME.heroDesc);
+
+            const removeBgCheckbox = document.getElementById('removeLogoBgCheckbox');
+            if (removeBgCheckbox) removeBgCheckbox.checked = Boolean(siteTheme.removeLogoBg);
+            const showHeroLogoCheckbox = document.getElementById('showHeroLogoCheckbox');
+            if (showHeroLogoCheckbox) showHeroLogoCheckbox.checked = siteTheme.showHeroLogo !== false;
+        }
+
+        // ฟังก์ชันคำนวณเฉดสีปุ่มกดเมื่อเอาเมาส์ชี้ (Hover) และสีพื้นหลังอ่อนอัตโนมัติ
+        function adjustHexLuminance(hex, percent) {
+            let cleanHex = String(hex || '#4f46e5').replace(/[^0-9a-fA-F]/g, '');
+            if (cleanHex.length === 3) {
+                cleanHex = cleanHex.split('').map(c => c + c).join('');
+            }
+            if (cleanHex.length !== 6) cleanHex = '4f46e5';
+            const num = parseInt(cleanHex, 16);
+            let r = (num >> 16) + Math.round(2.55 * percent);
+            let g = ((num >> 8) & 0x00FF) + Math.round(2.55 * percent);
+            let b = (num & 0x0000FF) + Math.round(2.55 * percent);
+            r = Math.max(0, Math.min(255, r));
+            g = Math.max(0, Math.min(255, g));
+            b = Math.max(0, Math.min(255, b));
+            return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+        }
+
+        function hexToRgbaString(hex, alpha) {
+            let cleanHex = String(hex || '#4f46e5').replace(/[^0-9a-fA-F]/g, '');
+            if (cleanHex.length === 3) {
+                cleanHex = cleanHex.split('').map(c => c + c).join('');
+            }
+            if (cleanHex.length !== 6) cleanHex = '4f46e5';
+            const num = parseInt(cleanHex, 16);
+            const r = (num >> 16) & 255;
+            const g = (num >> 8) & 255;
+            const b = num & 255;
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         }
 
         function applyThemeToDOM(themeObj) {
-            // 1. Body background color & optional full-page background image
+            const root = document.documentElement;
+
+            // 1. ตั้งค่าฟอนต์ตัวอักษรทั้งเว็บไซต์
+            const selectedFont = themeObj.fontFamily || DEFAULT_SITE_THEME.fontFamily;
+            root.style.setProperty('--theme-font', selectedFont);
+            root.style.setProperty('--theme-heading-font', selectedFont);
+
+            // 2. ตั้งค่าสีปุ่มกดหลัก (Primary Button & Accent Color) แทนที่สีฟ้าอมน้ำเงินเดิมทั้งหมด
+            const primaryHex = themeObj.primaryColor || DEFAULT_SITE_THEME.primaryColor;
+            const primaryHoverHex = adjustHexLuminance(primaryHex, -10);
+            const primaryLightRgba = hexToRgbaString(primaryHex, 0.1);
+            const primaryBorderRgba = hexToRgbaString(primaryHex, 0.28);
+            const primaryShadowRgba = hexToRgbaString(primaryHex, 0.24);
+
+            root.style.setProperty('--theme-primary', primaryHex);
+            root.style.setProperty('--theme-primary-hover', primaryHoverHex);
+            root.style.setProperty('--theme-primary-light', primaryLightRgba);
+            root.style.setProperty('--theme-primary-border', primaryBorderRgba);
+            root.style.setProperty('--theme-primary-shadow', primaryShadowRgba);
+
+            // 3. ตั้งค่าสีแถบด้านบน (Top Header Bar) และสีตัวหนังสือแถบบน
+            const headerBg = themeObj.headerBgColor || DEFAULT_SITE_THEME.headerBgColor;
+            const headerText = themeObj.headerTextColor || DEFAULT_SITE_THEME.headerTextColor;
+            root.style.setProperty('--theme-header-bg', hexToRgbaString(headerBg, 0.95));
+            root.style.setProperty('--theme-header-text', headerText);
+            root.style.setProperty('--theme-header-subtext', hexToRgbaString(headerText, 0.72));
+
+            // 4. Body background color & optional full-page background image
             document.body.style.backgroundColor = themeObj.bodyBgColor || DEFAULT_SITE_THEME.bodyBgColor;
             if (themeObj.bgImageData && themeObj.bgTarget === 'both') {
                 document.body.style.backgroundImage = `url('${themeObj.bgImageData}')`;
@@ -1236,7 +1575,7 @@ function doPost(e) {
                 document.body.style.backgroundImage = '';
             }
 
-            // 2. Hero Banner gradient & optional background image
+            // 5. Hero Banner gradient & optional background image
             const heroSection = document.getElementById('heroSection');
             const heroBgImageLayer = document.getElementById('heroBgImageLayer');
             const heroBgOverlay = document.getElementById('heroBgOverlay');
@@ -1258,39 +1597,420 @@ function doPost(e) {
                 }
             }
 
-            // 3. Hero Title & Description Text
+            // 6. ข้อความและสีตัวหนังสือในแถบบน + แบนเนอร์หลัก
+            const mainTitleTxt = themeObj.heroTitleMain ?? DEFAULT_SITE_THEME.heroTitleMain;
+            const highTitleTxt = themeObj.heroTitleHighlight ?? DEFAULT_SITE_THEME.heroTitleHighlight;
+            const schoolTxt = themeObj.schoolSubtitle ?? DEFAULT_SITE_THEME.schoolSubtitle;
+            const descTxt = themeObj.heroDesc ?? DEFAULT_SITE_THEME.heroDesc;
+            const heroTxtColor = themeObj.heroTextColor || DEFAULT_SITE_THEME.heroTextColor;
+            const heroHighColor = themeObj.heroHighlightColor || DEFAULT_SITE_THEME.heroHighlightColor;
+
             const titleMainEl = document.getElementById('heroTitleMain');
             const titleHighEl = document.getElementById('heroTitleHighlight');
+            const headerTitleMainEl = document.getElementById('headerTitleMain');
+            const headerTitleHighEl = document.getElementById('headerTitleHighlight');
+            const headerSubEl = document.getElementById('headerSubTitle');
+            const heroSchoolEl = document.getElementById('heroSchoolText');
             const descEl = document.getElementById('heroDescText');
-            if (titleMainEl) titleMainEl.textContent = themeObj.heroTitleMain || DEFAULT_SITE_THEME.heroTitleMain;
-            if (titleHighEl) titleHighEl.textContent = themeObj.heroTitleHighlight || DEFAULT_SITE_THEME.heroTitleHighlight;
-            if (descEl) descEl.textContent = themeObj.heroDesc || DEFAULT_SITE_THEME.heroDesc;
+
+            if (titleMainEl) {
+                titleMainEl.textContent = mainTitleTxt;
+                titleMainEl.style.color = heroTxtColor;
+            }
+            if (titleHighEl) {
+                titleHighEl.textContent = highTitleTxt;
+                titleHighEl.style.color = heroHighColor;
+            }
+            if (heroSchoolEl) {
+                heroSchoolEl.textContent = schoolTxt;
+                heroSchoolEl.style.color = heroHighColor;
+            }
+            if (headerTitleMainEl) headerTitleMainEl.textContent = mainTitleTxt;
+            if (headerTitleHighEl) headerTitleHighEl.textContent = highTitleTxt;
+            if (headerSubEl) headerSubEl.textContent = schoolTxt;
+            if (descEl) {
+                descEl.textContent = descTxt;
+                descEl.style.color = hexToRgbaString(heroTxtColor, 0.9);
+            }
+
+            // 7. การแสดงรูปโลโก้
+            const heroWrapper = document.getElementById('heroLogoWrapper');
+            if (themeObj.logoHidden) {
+                ['headerCustomLogo', 'heroCustomLogo', 'footerCustomLogo', 'adminLogoPreviewImg'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('hidden');
+                });
+                const adminPlaceholder = document.getElementById('adminLogoPreviewPlaceholder');
+                if (adminPlaceholder) adminPlaceholder.classList.remove('hidden');
+                const fallbackPicker = document.getElementById('headerLogoFallbackPicker');
+                if (fallbackPicker) {
+                    fallbackPicker.classList.remove('hidden');
+                    fallbackPicker.classList.add('flex');
+                }
+                if (heroWrapper) heroWrapper.classList.add('hidden');
+            } else {
+                const activeLogoData = themeObj.logoImageData || DEFAULT_EMBEDDED_LOGO_DATA;
+                if (activeLogoData) {
+                    setAllLogoElementsSrc(activeLogoData);
+                    const embedBtn = document.getElementById('embedLogoHtmlBtn');
+                    if (embedBtn) embedBtn.classList.remove('hidden');
+                }
+                if (heroWrapper && activeLogoData) {
+                    heroWrapper.classList.toggle('hidden', themeObj.showHeroLogo === false);
+                }
+            }
+        }
+
+        function setAllLogoElementsSrc(srcData) {
+            const fallbackPicker = document.getElementById('headerLogoFallbackPicker');
+            if (fallbackPicker) {
+                fallbackPicker.classList.add('hidden');
+                fallbackPicker.classList.remove('flex');
+            }
+            const adminPlaceholder = document.getElementById('adminLogoPreviewPlaceholder');
+            if (adminPlaceholder) adminPlaceholder.classList.add('hidden');
+            const heroWrapper = document.getElementById('heroLogoWrapper');
+            if (heroWrapper && siteTheme.showHeroLogo !== false) heroWrapper.classList.remove('hidden');
+            const footerWrapper = document.getElementById('footerLogoWrapper');
+            if (footerWrapper) footerWrapper.classList.remove('hidden');
+
+            ['headerCustomLogo', 'heroCustomLogo', 'footerCustomLogo', 'adminLogoPreviewImg'].forEach(id => {
+                const imgEl = document.getElementById(id);
+                if (imgEl && srcData) {
+                    if (imgEl.getAttribute('src') !== srcData) {
+                        imgEl.src = srcData;
+                    }
+                    imgEl.classList.remove('hidden');
+                }
+            });
+        }
+
+        /**
+         * เมื่อไฟล์รูปโลโก้โรงเรียนโหลดสำเร็จจากโฟลเดอร์เว็บไซต์
+         * จะตัดพื้นหลังสีขาวออกให้อัตโนมัติโดยคงรายละเอียดโลโก้ต้นฉบับ 100%
+         */
+        let hasProcessedDefaultLogo = false;
+        function onDefaultLogoFileLoaded(imgEl) {
+            const quickBar = document.getElementById('quickLogoSetupBar');
+            if (quickBar) quickBar.classList.add('hidden');
+            const fallbackPicker = document.getElementById('headerLogoFallbackPicker');
+            if (fallbackPicker) {
+                fallbackPicker.classList.add('hidden');
+                fallbackPicker.classList.remove('flex');
+            }
+            imgEl.classList.remove('hidden');
+
+            if (siteTheme.logoImageData || DEFAULT_EMBEDDED_LOGO_DATA || hasProcessedDefaultLogo) return;
+            if (!imgEl.src || imgEl.src.startsWith('data:')) return;
+
+            try {
+                hasProcessedDefaultLogo = true;
+                const cutOutDataUrl = removeWhiteBackgroundFromOriginalLogo(imgEl, siteTheme.removeLogoBg !== false);
+                if (cutOutDataUrl) {
+                    siteTheme.logoImageData = cutOutDataUrl;
+                    setAllLogoElementsSrc(cutOutDataUrl);
+                    const dlBtn = document.getElementById('downloadCutoutLogoBtn');
+                    if (dlBtn) dlBtn.classList.remove('hidden');
+                    const embedBtn = document.getElementById('embedLogoHtmlBtn');
+                    if (embedBtn) embedBtn.classList.remove('hidden');
+                }
+            } catch (e) {
+                // กรณีติด CORS เวลาเปิดไฟล์แบบ file:// จะแสดงภาพต้นฉบับตามปกติ
+            }
+        }
+
+        function onDefaultLogoFileError(imgEl) {
+            const activeLogo = siteTheme.logoImageData || DEFAULT_EMBEDDED_LOGO_DATA;
+            if (activeLogo) {
+                setAllLogoElementsSrc(activeLogo);
+                return;
+            }
+            // ลองโหลดชื่อไฟล์สำรองตามลำดับ
+            const currentSrc = decodeURIComponent(imgEl.getAttribute('src') || '');
+            if (currentSrc === 'กิจกรรมข้าวสารสัมพันธ์ 69_3.jpg') {
+                setAllLogoElementsSrc('กิจกรรมข้าวสารสัมพันธ์ 69_2.jpg');
+            } else if (currentSrc === 'กิจกรรมข้าวสารสัมพันธ์ 69_2.jpg') {
+                setAllLogoElementsSrc('กิจกรรมข้าวสารสัมพันธ์ 69.jpg');
+            } else if (currentSrc === 'กิจกรรมข้าวสารสัมพันธ์ 69.jpg') {
+                setAllLogoElementsSrc('logo.png');
+            } else {
+                // ซ่อนไอคอนรูปแตกในโหมด Preview และแสดงปุ่มคลิกใส่โลโก้ที่แถบบนโดยตรง
+                ['headerCustomLogo', 'heroCustomLogo', 'footerCustomLogo'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('hidden');
+                });
+                const heroWrapper = document.getElementById('heroLogoWrapper');
+                if (heroWrapper) heroWrapper.classList.add('hidden');
+                const footerWrapper = document.getElementById('footerLogoWrapper');
+                if (footerWrapper) footerWrapper.classList.add('hidden');
+
+                const fallbackPicker = document.getElementById('headerLogoFallbackPicker');
+                if (fallbackPicker) {
+                    fallbackPicker.classList.remove('hidden');
+                    fallbackPicker.classList.add('flex');
+                }
+                const quickBar = document.getElementById('quickLogoSetupBar');
+                if (quickBar) quickBar.classList.remove('hidden');
+            }
+        }
+
+        /**
+         * ฟังก์ชันดาวน์โหลดไฟล์ index.html ที่มีรูปโลโก้โรงเรียนต้นฉบับฝังอยู่ในโค้ดถาวร
+         * เมื่อนำไฟล์ index.html นี้ไปอัปโหลดขึ้น GitHub โลโก้ที่แถบบนจะแสดงผลทุกเครื่องทันทีโดยไม่ต้องอัปโหลดไฟล์รูปแยก
+         */
+        function downloadHtmlWithEmbeddedLogo() {
+            const logoData = siteTheme.logoImageData || DEFAULT_EMBEDDED_LOGO_DATA;
+            if (!logoData) {
+                showToast('กรุณาเลือกรูปโลโก้ก่อนกดดาวน์โหลดไฟล์ HTML', true);
+                return;
+            }
+            let fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            fullHtml = fullHtml.replace(
+                /const DEFAULT_EMBEDDED_LOGO_DATA = "[^"]*";/,
+                `const DEFAULT_EMBEDDED_LOGO_DATA = "${logoData}";`
+            );
+            const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'index.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('ดาวน์โหลดไฟล์ index.html ที่ฝังโลโก้แถบบนถาวรเรียบร้อยแล้ว!');
+        }
+
+        /**
+         * ฟังก์ชันตัดพื้นหลังสีขาวออกจากรูปโลโก้ต้นฉบับด้วย Flood-Fill จากขอบภาพ
+         * รักษาดอกบัวสีขาวทั้ง 4 ดอกด้านในตรา และรักษาตัวหนังสือชื่อโรงเรียนโค้งด้านล่างไว้ครบถ้วน
+         */
+        function removeWhiteBackgroundFromOriginalLogo(img, shouldRemoveBg = true) {
+            const canvas = document.createElement('canvas');
+            const maxDim = 650;
+            let width = img.naturalWidth || img.width;
+            let height = img.naturalHeight || img.height;
+
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            if (!shouldRemoveBg) {
+                return canvas.toDataURL('image/png');
+            }
+
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const data = imageData.data;
+            const visited = new Uint8Array(width * height);
+            const queue = new Int32Array(width * height);
+            let head = 0;
+            let tail = 0;
+
+            const pushPixel = (x, y) => {
+                if (x < 0 || x >= width || y < 0 || y >= height) return;
+                const idx = y * width + x;
+                if (visited[idx]) return;
+
+                const p = idx * 4;
+                const r = data[p];
+                const g = data[p + 1];
+                const b = data[p + 2];
+                const maxC = Math.max(r, g, b);
+                const minC = Math.min(r, g, b);
+                const saturation = maxC - minC;
+
+                // วิ่งผ่านเฉพาะพื้นที่ไม่มีสีสด (พื้นหลังสีขาว และช่องว่างระหว่างตัวอักษรสีดำด้านล่าง)
+                // โดยจะหยุดทันทีเมื่อชนเส้นขอบสีส้ม/น้ำตาล/ทองของตราโรงเรียน ทำให้ดอกบัวสีขาวด้านในตราไม่ถูกเจาะ
+                if (saturation < 42) {
+                    visited[idx] = 1;
+                    queue[tail++] = idx;
+                }
+            };
+
+            // เริ่ม Flood-fill จากขอบทั้ง 4 ด้านของรูปภาพ
+            for (let x = 0; x < width; x++) {
+                pushPixel(x, 0);
+                pushPixel(x, height - 1);
+            }
+            for (let y = 0; y < height; y++) {
+                pushPixel(0, y);
+                pushPixel(width - 1, y);
+            }
+
+            while (head < tail) {
+                const curr = queue[head++];
+                const cx = curr % width;
+                const cy = (curr / width) | 0;
+                pushPixel(cx + 1, cy);
+                pushPixel(cx - 1, cy);
+                pushPixel(cx, cy + 1);
+                pushPixel(cx, cy - 1);
+            }
+
+            // ปรับค่าความโปร่งใส (Alpha) เฉพาะพิกเซลพื้นหลังด้านนอกตรา
+            for (let idx = 0; idx < width * height; idx++) {
+                if (visited[idx]) {
+                    const p = idx * 4;
+                    const r = data[p];
+                    const g = data[p + 1];
+                    const b = data[p + 2];
+                    const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+
+                    if (brightness > 235) {
+                        // พื้นหลังสีขาว -> โปร่งใส 100%
+                        data[p + 3] = 0;
+                    } else if (brightness > 180) {
+                        // ขอบตัวหนังสือสีดำ -> ไล่ระดับความโปร่งใสให้ขอบตัวอักษรเนียนคมชัด
+                        const alphaFactor = (235 - brightness) / 55;
+                        data[p + 3] = Math.round(alphaFactor * 255);
+                    }
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            return canvas.toDataURL('image/png');
+        }
+
+        function handleLogoFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const rawDataUrl = e.target.result;
+                const img = new Image();
+                img.onload = function() {
+                    const removeBg = document.getElementById('removeLogoBgCheckbox')
+                        ? document.getElementById('removeLogoBgCheckbox').checked
+                        : Boolean(siteTheme.removeLogoBg);
+                    const processedDataUrl = removeWhiteBackgroundFromOriginalLogo(img, removeBg);
+                    siteTheme.logoHidden = false;
+                    siteTheme.logoRawData = rawDataUrl;
+                    siteTheme.logoImageData = processedDataUrl;
+                    siteTheme.removeLogoBg = removeBg;
+                    try {
+                        localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+                    } catch (storageErr) {
+                        siteTheme.logoRawData = '';
+                        localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+                    }
+                    applyThemeToDOM(siteTheme);
+                    showToast('อัปโหลดเปลี่ยนรูปในช่องโลโก้เรียบร้อยแล้ว!');
+                };
+                img.src = rawDataUrl;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleLogoUrlInput(url) {
+            const trimmed = url.trim();
+            if (!trimmed) return;
+            siteTheme.logoHidden = false;
+            siteTheme.logoRawData = '';
+            siteTheme.logoImageData = trimmed;
+            setAllLogoElementsSrc(trimmed);
+            applyThemeToDOM(siteTheme);
+        }
+
+        function clearCustomLogo() {
+            siteTheme.logoImageData = '';
+            siteTheme.logoRawData = '';
+            siteTheme.logoHidden = true;
+            const logoUrlInput = document.getElementById('customLogoUrlInput');
+            if (logoUrlInput) logoUrlInput.value = '';
+            localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+            applyThemeToDOM(siteTheme);
+            showToast('ลบรูปโลโก้เรียบร้อยแล้ว สามารถอัปโหลดรูปใหม่ได้ทุกเมื่อ');
+        }
+
+        function reprocessSavedLogo() {
+            const removeBgCheckbox = document.getElementById('removeLogoBgCheckbox');
+            const removeBg = removeBgCheckbox ? removeBgCheckbox.checked : true;
+            siteTheme.removeLogoBg = removeBg;
+
+            const sourceData = siteTheme.logoRawData || siteTheme.logoImageData;
+            if (!sourceData) return;
+
+            const img = new Image();
+            img.onload = function() {
+                siteTheme.logoImageData = removeWhiteBackgroundFromOriginalLogo(img, removeBg);
+                localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+                applyThemeToDOM(siteTheme);
+                showToast(removeBg ? 'ตัดพื้นหลังสีขาวของโลโก้ออกเรียบร้อยแล้ว' : 'แสดงพื้นหลังต้นฉบับของโลโก้แล้ว');
+            };
+            img.src = sourceData;
+        }
+
+        function downloadCutoutLogoPng() {
+            if (!siteTheme.logoImageData) return;
+            const a = document.createElement('a');
+            a.href = siteTheme.logoImageData;
+            a.download = 'logo.png';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('ดาวน์โหลดไฟล์โลโก้พื้นหลังใส (logo.png) เรียบร้อยแล้ว');
         }
 
         function previewCustomTheme() {
             const bodyBg = document.getElementById('customBodyBgColor').value;
             const heroStart = document.getElementById('customHeroColorStart').value;
             const heroEnd = document.getElementById('customHeroColorEnd').value;
+            const primaryColor = document.getElementById('customPrimaryColor').value;
+            const headerBgColor = document.getElementById('customHeaderBgColor').value;
+            const headerTextColor = document.getElementById('customHeaderTextColor').value;
+            const heroTextColor = document.getElementById('customHeroTextColor').value;
+            const heroHighlightColor = document.getElementById('customHeroHighlightColor').value;
+            const fontFamily = document.getElementById('customFontFamily').value;
+            const showHeroLogoEl = document.getElementById('showHeroLogoCheckbox');
 
             document.getElementById('customBodyBgText').value = bodyBg;
             document.getElementById('customHeroColorStartText').value = heroStart;
             document.getElementById('customHeroColorEndText').value = heroEnd;
+            document.getElementById('customPrimaryColorText').value = primaryColor;
+            document.getElementById('customHeaderBgText').value = headerBgColor;
+            document.getElementById('customHeaderTextColorText').value = headerTextColor;
+            document.getElementById('customHeroTextColorText').value = heroTextColor;
+            document.getElementById('customHeroHighlightColorText').value = heroHighlightColor;
 
             siteTheme.bodyBgColor = bodyBg;
             siteTheme.heroColorStart = heroStart;
             siteTheme.heroColorEnd = heroEnd;
+            siteTheme.primaryColor = primaryColor;
+            siteTheme.headerBgColor = headerBgColor;
+            siteTheme.headerTextColor = headerTextColor;
+            siteTheme.heroTextColor = heroTextColor;
+            siteTheme.heroHighlightColor = heroHighlightColor;
+            siteTheme.fontFamily = fontFamily;
+            siteTheme.showHeroLogo = showHeroLogoEl ? showHeroLogoEl.checked : true;
             siteTheme.bgTarget = document.getElementById('customBgTarget').value;
             siteTheme.heroTitleMain = document.getElementById('customHeroTitleMain').value;
             siteTheme.heroTitleHighlight = document.getElementById('customHeroTitleHighlight').value;
+            siteTheme.schoolSubtitle = document.getElementById('customSchoolSubtitle').value;
             siteTheme.heroDesc = document.getElementById('customHeroDescInput').value;
 
             applyThemeToDOM(siteTheme);
         }
 
-        function applyThemePreset(bodyBg, heroStart, heroEnd) {
+        function applyThemePreset(bodyBg, heroStart, heroEnd, primaryColor = '#4f46e5', headerBg = '#ffffff', headerText = '#0f172a', heroText = '#ffffff', heroHighlight = '#fcd34d') {
             document.getElementById('customBodyBgColor').value = bodyBg;
             document.getElementById('customHeroColorStart').value = heroStart;
             document.getElementById('customHeroColorEnd').value = heroEnd;
+            document.getElementById('customPrimaryColor').value = primaryColor;
+            document.getElementById('customHeaderBgColor').value = headerBg;
+            document.getElementById('customHeaderTextColor').value = headerText;
+            document.getElementById('customHeroTextColor').value = heroText;
+            document.getElementById('customHeroHighlightColor').value = heroHighlight;
             previewCustomTheme();
             saveSiteCustomization();
         }
