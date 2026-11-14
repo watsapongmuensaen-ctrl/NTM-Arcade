@@ -735,10 +735,14 @@
                                     placeholder="https://script.google.com/macros/s/AKfycb.../exec"
                                     class="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
                                 >
-                                <button onclick="saveGoogleSheetConfig()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shrink-0 transition">
+                                <button type="button" onclick="saveGoogleSheetConfig()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shrink-0 transition">
                                     <i class="fa-solid fa-plug mr-1"></i> บันทึกและเชื่อมต่อ
                                 </button>
+                                <button type="button" onclick="testGoogleSheetConnection()" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shrink-0 transition">
+                                    <i class="fa-solid fa-stethoscope mr-1"></i> ทดสอบสัญญาณ
+                                </button>
                             </div>
+                            <div id="connectionDiagBox" class="hidden mt-2 p-3 rounded-xl text-xs border"></div>
                         </div>
 
                         <!-- Optional CSV Read-only Link -->
@@ -1023,11 +1027,10 @@ function doPost(e) {
         /**
          * =====================================================================
          * ส่วนตั้งค่าสำหรับผู้ดูแลเว็บไซต์ (เมื่อนำไปเปิดออนไลน์บน GitHub Pages):
-         * นำลิงก์ Web App URL จาก Google Apps Script (ที่ลงท้ายด้วย /exec)
-         * มาใส่ในเครื่องหมายคำพูดของ DEFAULT_GOOGLE_SCRIPT_URL ด้านล่างนี้
+         * ฝังลิงก์ Web App URL จาก Google Apps Script ให้เรียบร้อยแล้ว
          * =====================================================================
          */
-        const DEFAULT_GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDxWmmCBa3ttidrzSOGpyFiwQoDUZGvBhMSxNH4LFVXaD6cIGqv_htfxkz29xyLe8x/exec""; // เช่น "https://script.google.com/macros/s/AKfycb.../exec"
+        const DEFAULT_GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDxWmmCBa3ttidrzSOGpyFiwQoDUZGvBhMSxNH4LFVXaD6cIGqv_htfxkz29xyLe8x/exec";
         const DEFAULT_GOOGLE_CSV_URL = "";    // ทางเลือกสำรอง: ลิงก์ CSV จากการ Publish to Web
         const DEFAULT_DEV_PIN = "12345";      // รหัสผ่านผู้พัฒนาเริ่มต้น
 
@@ -1445,12 +1448,20 @@ function doPost(e) {
         /**
          * 1. ระบบเชื่อมต่อฐานข้อมูล Google Sheets + LocalStorage Fallback
          */
+        function cleanUrlString(rawUrl) {
+            return String(rawUrl || '').replace(/["'\s<>]/g, '').trim();
+        }
+
         function getScriptUrl() {
-            return localStorage.getItem(STORAGE_SCRIPT_URL_KEY) || DEFAULT_GOOGLE_SCRIPT_URL;
+            const stored = cleanUrlString(localStorage.getItem(STORAGE_SCRIPT_URL_KEY));
+            const fallback = cleanUrlString(DEFAULT_GOOGLE_SCRIPT_URL);
+            return stored || fallback;
         }
 
         function getCsvUrl() {
-            return localStorage.getItem(STORAGE_CSV_URL_KEY) || DEFAULT_GOOGLE_CSV_URL;
+            const stored = cleanUrlString(localStorage.getItem(STORAGE_CSV_URL_KEY));
+            const fallback = cleanUrlString(DEFAULT_GOOGLE_CSV_URL);
+            return stored || fallback;
         }
 
         function normalizeGameRecord(item) {
@@ -1472,6 +1483,11 @@ function doPost(e) {
             const scriptUrl = getScriptUrl();
             const csvUrl = getCsvUrl();
 
+            // ล้างค่า URL ใน LocalStorage หากเคยมีเครื่องหมายคำพูด (") ติดเข้าไป
+            if (localStorage.getItem(STORAGE_SCRIPT_URL_KEY)) {
+                localStorage.setItem(STORAGE_SCRIPT_URL_KEY, scriptUrl);
+            }
+
             const scriptInput = document.getElementById('scriptUrlInput');
             const csvInput = document.getElementById('csvUrlInput');
             if (scriptInput) scriptInput.value = scriptUrl;
@@ -1480,7 +1496,10 @@ function doPost(e) {
             const savedLocal = localStorage.getItem(STORAGE_GAMES_KEY);
             if (savedLocal) {
                 try {
-                    gamesList = JSON.parse(savedLocal).map(normalizeGameRecord);
+                    const parsedLocal = JSON.parse(savedLocal);
+                    gamesList = Array.isArray(parsedLocal) && parsedLocal.length > 0
+                        ? parsedLocal.map(normalizeGameRecord)
+                        : SAMPLE_GAMES.map(normalizeGameRecord);
                 } catch (e) {
                     gamesList = SAMPLE_GAMES.map(normalizeGameRecord);
                 }
@@ -1493,7 +1512,7 @@ function doPost(e) {
             updateAdminStatusUI();
 
             if (scriptUrl || csvUrl) {
-                await syncFromGoogleSheets();
+                await syncFromGoogleSheets(true);
             }
         }
 
@@ -1509,26 +1528,26 @@ function doPost(e) {
                     syncBtn.classList.remove('hidden');
                     syncBtn.classList.add('flex');
                 }
-                if (dot) dot.className = "w-3 h-3 rounded-full bg-emerald-500";
-                if (text) text.textContent = "เชื่อมต่อ Google Sheets (Apps Script) เรียบร้อยแล้ว";
+                if (dot) dot.className = 'w-3 h-3 rounded-full bg-emerald-500';
+                if (text) text.textContent = 'เชื่อมต่อ Google Sheets (Web App URL) พร้อมอ่าน/เขียนข้อมูลอัตโนมัติ';
             } else if (csvUrl) {
                 if (syncBtn) {
                     syncBtn.classList.remove('hidden');
                     syncBtn.classList.add('flex');
                 }
-                if (dot) dot.className = "w-3 h-3 rounded-full bg-sky-500";
-                if (text) text.textContent = "เชื่อมต่อ Google Sheets (CSV) เรียบร้อยแล้ว";
+                if (dot) dot.className = 'w-3 h-3 rounded-full bg-sky-500';
+                if (text) text.textContent = 'เชื่อมต่อโหมดดึงข้อมูล Google Sheets (CSV อ่านอย่างเดียว)';
             } else {
                 if (syncBtn) {
                     syncBtn.classList.add('hidden');
                     syncBtn.classList.remove('flex');
                 }
-                if (dot) dot.className = "w-3 h-3 rounded-full bg-amber-500";
-                if (text) text.textContent = "โหมดบันทึกในเครื่อง (ยังไม่ได้ระบุ Google Apps Script URL)";
+                if (dot) dot.className = 'w-3 h-3 rounded-full bg-amber-500';
+                if (text) text.textContent = 'โหมดบันทึกในเครื่อง (ยังไม่ได้ระบุ Google Apps Script URL)';
             }
         }
 
-        async function syncFromGoogleSheets() {
+        async function syncFromGoogleSheets(isSilentInit = false) {
             const scriptUrl = getScriptUrl();
             const csvUrl = getCsvUrl();
             const syncIcon = document.getElementById('syncIcon');
@@ -1536,13 +1555,26 @@ function doPost(e) {
 
             try {
                 if (scriptUrl) {
-                    const res = await fetch(scriptUrl);
-                    const json = await res.json();
-                    if (json && Array.isArray(json.data)) {
-                        gamesList = json.data.map(normalizeGameRecord);
-                        localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
+                    const res = await fetch(scriptUrl, { method: 'GET', redirect: 'follow' });
+                    const text = await res.text();
+                    let json = null;
+                    try {
+                        json = JSON.parse(text);
+                    } catch (parseErr) {
+                        throw new Error('สคริปต์ไม่ได้ส่งค่ากลับมาเป็น JSON (อาจตั้งค่าสิทธิ์การเข้าถึงไม่ได้เป็น "ทุกคน / Anyone" หรือยังไม่ได้วางโค้ด Code.gs)');
+                    }
+
+                    if (json && json.status === 'success' && Array.isArray(json.data)) {
+                        if (json.data.length > 0) {
+                            gamesList = json.data.map(normalizeGameRecord);
+                            localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
+                        }
                         renderGames();
-                        showToast('ซิงค์ข้อมูลล่าสุดจาก Google Sheets เรียบร้อยแล้ว');
+                        if (!isSilentInit) {
+                            showToast(`ซิงค์ข้อมูลสำเร็จ (${json.data.length} เกมใน Google Sheets)`);
+                        }
+                    } else if (json && json.status === 'error') {
+                        throw new Error(json.message || 'Google Script Error');
                     }
                 } else if (csvUrl) {
                     const res = await fetch(csvUrl);
@@ -1552,20 +1584,81 @@ function doPost(e) {
                         gamesList = parsed.map(normalizeGameRecord);
                         localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
                         renderGames();
-                        showToast('ดึงข้อมูลเกมจาก Google Sheets CSV สำเร็จ');
+                        if (!isSilentInit) showToast('ดึงข้อมูลเกมจาก Google Sheets CSV สำเร็จ');
                     }
                 }
             } catch (err) {
-                console.error('Error syncing Google Sheets:', err);
-                showToast('ไม่สามารถดึงข้อมูลจาก Google Sheets ได้ กรุณาตรวจสอบ URL', true);
+                console.warn('Google Sheets Sync Warning:', err);
+                if (!isSilentInit) {
+                    showToast('เชื่อมต่อ Google Sheets ไม่สำเร็จ กรุณากดปุ่ม "ทดสอบสัญญาณ" ในหน้าตั้งค่า', true);
+                }
             } finally {
                 if (syncIcon) syncIcon.classList.remove('fa-spin');
             }
         }
 
+        async function testGoogleSheetConnection() {
+            const inputEl = document.getElementById('scriptUrlInput');
+            const cleanUrl = cleanUrlString(inputEl ? inputEl.value : getScriptUrl());
+            if (inputEl) inputEl.value = cleanUrl;
+
+            const diagBox = document.getElementById('connectionDiagBox');
+            if (!diagBox) return;
+            diagBox.classList.remove('hidden');
+            diagBox.className = 'mt-2 p-3 rounded-xl text-xs border bg-slate-50 border-slate-200 text-slate-700';
+            diagBox.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1.5 text-indigo-600"></i> กำลังทดสอบการเชื่อมต่อกับ Google Apps Script...`;
+
+            if (!cleanUrl || !cleanUrl.includes('script.google.com')) {
+                diagBox.className = 'mt-2 p-3 rounded-xl text-xs border bg-rose-50 border-rose-200 text-rose-700';
+                diagBox.innerHTML = `<strong>❌ ลิงก์ไม่ถูกต้อง:</strong> กรุณาใช้ลิงก์ที่ขึ้นต้นด้วย <code>https://script.google.com/macros/s/.../exec</code>`;
+                return;
+            }
+
+            try {
+                const res = await fetch(cleanUrl, { method: 'GET', redirect: 'follow' });
+                const rawText = await res.text();
+                let json = null;
+                try {
+                    json = JSON.parse(rawText);
+                } catch (e) {
+                    diagBox.className = 'mt-2 p-3 rounded-xl text-xs border bg-amber-50 border-amber-300 text-amber-900 space-y-1';
+                    diagBox.innerHTML = `
+                        <p class="font-bold">⚠️ ติดสิทธิ์การเข้าถึง หรือยังไม่ได้ Deploy โค้ดล่าสุด</p>
+                        <p>Google ส่งหน้าเว็บกลับมาแทนข้อมูล JSON กรุณาตรวจสอบในหน้า Apps Script:</p>
+                        <ol class="list-decimal list-inside space-y-0.5 pt-1">
+                            <li>วางโค้ด <strong>Code.gs</strong> ด้านล่างลงใน Apps Script แล้วกด <strong>Ctrl+S</strong></li>
+                            <li>กด <strong>Deploy &gt; New deployment (การทำให้ใช้งานได้รายการใหม่)</strong></li>
+                            <li>ช่อง <strong>ผู้ที่มีสิทธิ์เข้าถึง (Who has access)</strong> ต้องเลือกเป็น <strong>ทุกคน (Anyone)</strong> เท่านั้น</li>
+                        </ol>
+                    `;
+                    return;
+                }
+
+                if (json && json.status === 'success') {
+                    localStorage.setItem(STORAGE_SCRIPT_URL_KEY, cleanUrl);
+                    updateAdminStatusUI();
+                    diagBox.className = 'mt-2 p-3 rounded-xl text-xs border bg-emerald-50 border-emerald-300 text-emerald-800';
+                    diagBox.innerHTML = `<strong>✅ เชื่อมต่อสำเร็จสมบูรณ์!</strong> พบข้อมูลใน Google Sheets จำนวน <strong>${(json.data || []).length}</strong> รายการ พร้อมอัปโหลดและแก้ไขเกมได้ทันที`;
+                    showToast('เชื่อมต่อ Google Sheets สำเร็จ!');
+                } else {
+                    diagBox.className = 'mt-2 p-3 rounded-xl text-xs border bg-rose-50 border-rose-200 text-rose-700';
+                    diagBox.innerHTML = `<strong>❌ สคริปต์แจ้งข้อผิดพลาด:</strong> ${escapeHtml(json?.message || 'ไม่ทราบสาเหตุ')}`;
+                }
+            } catch (err) {
+                diagBox.className = 'mt-2 p-3 rounded-xl text-xs border bg-rose-50 border-rose-200 text-rose-700 space-y-1';
+                diagBox.innerHTML = `
+                    <p class="font-bold">❌ ไม่สามารถเชื่อมต่อกับลิงก์สคริปต์นี้ได้ (CORS / Network Blocked)</p>
+                    <p>สาเหตุหลักเกิดจากในหน้า Google Apps Script ตั้งค่า <strong>ผู้ที่มีสิทธิ์เข้าถึง (Who has access)</strong> ไม่ได้เป็น <strong>"ทุกคน (Anyone)"</strong> หรือลิงก์ Web App ไม่ตรงกับรายการ Deploy ล่าสุด</p>
+                `;
+            }
+        }
+
         function saveGoogleSheetConfig() {
-            const scriptUrl = document.getElementById('scriptUrlInput').value.trim();
-            const csvUrl = document.getElementById('csvUrlInput').value.trim();
+            const scriptUrl = cleanUrlString(document.getElementById('scriptUrlInput').value);
+            const csvUrl = cleanUrlString(document.getElementById('csvUrlInput').value);
+
+            document.getElementById('scriptUrlInput').value = scriptUrl;
+            document.getElementById('csvUrlInput').value = csvUrl;
 
             localStorage.setItem(STORAGE_SCRIPT_URL_KEY, scriptUrl);
             localStorage.setItem(STORAGE_CSV_URL_KEY, csvUrl);
@@ -1574,7 +1667,7 @@ function doPost(e) {
             closeModal('sheetsModal');
 
             if (scriptUrl || csvUrl) {
-                syncFromGoogleSheets();
+                syncFromGoogleSheets(false);
             } else {
                 showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว');
             }
@@ -1621,8 +1714,9 @@ function doPost(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const maxW = 600;
-                    const maxH = 340;
+                    // บีบอัดขนาดภาพให้อยู่ในเกณฑ์ที่ปลอดภัยต่อลิมิต 50,000 ตัวอักษรต่อเซลล์ของ Google Sheets เสมอ
+                    const maxW = 480;
+                    const maxH = 270;
                     let width = img.width;
                     let height = img.height;
 
@@ -1643,13 +1737,19 @@ function doPost(e) {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.76);
+                    let quality = 0.72;
+                    let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    while (compressedDataUrl.length > 42000 && quality > 0.3) {
+                        quality -= 0.1;
+                        compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    }
+
                     currentImageData = compressedDataUrl;
                     updateImagePreviewUI(compressedDataUrl);
 
                     const sizeKB = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
                     const infoEl = document.getElementById('imageSizeInfo');
-                    infoEl.textContent = `✓ ย่อขนาดภาพอัตโนมัติพร้อมบันทึก (${width}x${height} px, ~${sizeKB} KB)`;
+                    infoEl.textContent = `✓ ย่อขนาดภาพอัตโนมัติพร้อมบันทึกลง Google Sheets (${width}x${height} px, ~${sizeKB} KB)`;
                     infoEl.classList.remove('hidden');
                 };
                 img.src = e.target.result;
@@ -1750,72 +1850,94 @@ function doPost(e) {
         async function handleGameSubmit(event) {
             event.preventDefault();
 
-            const id = document.getElementById('gameIdInput').value;
-            const title = document.getElementById('titleInput').value.trim();
-            const subject = document.getElementById('subjectInput').value;
-            const grade = document.getElementById('gradeInput').value;
-            const description = document.getElementById('descInput').value.trim();
-            const playUrl = document.getElementById('playUrlInput').value.trim();
-            const author = document.getElementById('authorInput').value.trim() || 'ครูผู้พัฒนาสื่อ';
-
-            const finalImage = currentImageData || `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(title)}`;
-
             const submitBtn = document.getElementById('submitGameBtn');
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>กำลังบันทึก...</span>`;
 
-            const existingViews = id ? (gamesList.find(g => String(g.id) === String(id))?.views || 0) : 0;
-            const createdDate = new Date().toISOString().split('T')[0];
+            try {
+                const id = document.getElementById('gameIdInput').value;
+                const title = document.getElementById('titleInput').value.trim();
+                const subject = document.getElementById('subjectInput').value;
+                const grade = document.getElementById('gradeInput').value;
+                const description = document.getElementById('descInput').value.trim();
+                const playUrl = document.getElementById('playUrlInput').value.trim();
+                const author = document.getElementById('authorInput').value.trim() || 'ครูผู้พัฒนาสื่อ';
 
-            // รองรับทั้งคีย์ชุดใหม่และชุดเดิมใน Google Sheets
-            const gameObj = {
-                id: id || 'game_' + Date.now(),
-                title,
-                subject,
-                grade,
-                description,
-                imageUrl: finalImage,
-                image: finalImage,
-                playUrl,
-                gameUrl: playUrl,
-                author,
-                views: existingViews,
-                plays: existingViews,
-                createdAt: createdDate
-            };
+                const finalImage = currentImageData || `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(title)}`;
+                const existingGame = id ? gamesList.find(g => String(g.id) === String(id)) : null;
+                const existingViews = existingGame ? (Number(existingGame.views) || 0) : 0;
+                const createdDate = existingGame?.createdAt || new Date().toISOString().split('T')[0];
 
-            if (id) {
-                const index = gamesList.findIndex(g => String(g.id) === String(id));
-                if (index > -1) gamesList[index] = gameObj;
-            } else {
-                gamesList.unshift(gameObj);
-            }
+                const gameObj = {
+                    id: id || 'game_' + Date.now(),
+                    title,
+                    subject,
+                    grade,
+                    description,
+                    imageUrl: finalImage,
+                    image: finalImage,
+                    playUrl,
+                    gameUrl: playUrl,
+                    author,
+                    views: existingViews,
+                    plays: existingViews,
+                    createdAt: createdDate
+                };
 
-            localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
-            renderGames();
-
-            const scriptUrl = getScriptUrl();
-            if (scriptUrl) {
-                try {
-                    const actionType = id ? 'edit' : 'add';
-                    await fetch(scriptUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: actionType, game: gameObj })
-                    });
-                    showToast(id ? 'แก้ไขข้อมูลเกมและอัปเดตลง Google Sheets เรียบร้อยแล้ว!' : 'อัปโหลดเกมและบันทึกลง Google Sheets เรียบร้อยแล้ว!');
-                } catch (err) {
-                    console.error(err);
-                    showToast('บันทึกในเครื่องแล้ว แต่ส่งไป Google Sheets ไม่สำเร็จ', true);
+                if (id) {
+                    const index = gamesList.findIndex(g => String(g.id) === String(id));
+                    if (index > -1) gamesList[index] = gameObj;
+                } else {
+                    gamesList.unshift(gameObj);
                 }
-            } else {
-                showToast(id ? 'บันทึกการแก้ไขข้อมูลเกมเรียบร้อยแล้ว!' : 'บันทึกข้อมูลเกมเรียบร้อยแล้ว!');
-            }
 
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> <span>บันทึกข้อมูลเกม</span>`;
-            closeModal('addGameModal');
+                localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
+                renderGames();
+
+                const scriptUrl = getScriptUrl();
+                if (scriptUrl) {
+                    const actionType = id ? 'edit' : 'add';
+                    // ส่งข้อมูลไปที่ Google Sheets โดยไม่ซ้ำซ้อนคีย์รูปภาพเพื่อความรวดเร็ว
+                    const sheetPayload = {
+                        action: actionType,
+                        game: {
+                            id: gameObj.id,
+                            title: gameObj.title,
+                            subject: gameObj.subject,
+                            grade: gameObj.grade,
+                            description: gameObj.description,
+                            gameUrl: gameObj.playUrl,
+                            image: finalImage,
+                            author: gameObj.author,
+                            views: gameObj.views,
+                            createdAt: gameObj.createdAt
+                        }
+                    };
+
+                    try {
+                        await fetch(scriptUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify(sheetPayload)
+                        });
+                        showToast(id ? 'แก้ไขข้อมูลเกมและอัปเดตลง Google Sheets เรียบร้อยแล้ว!' : 'อัปโหลดเกมและบันทึกลง Google Sheets เรียบร้อยแล้ว!');
+                    } catch (err) {
+                        console.error('Error posting to Google Sheets:', err);
+                        showToast('บันทึกในหน้าเว็บแล้ว แต่ส่งไป Google Sheets ไม่สำเร็จ', true);
+                    }
+                } else {
+                    showToast(id ? 'บันทึกการแก้ไขข้อมูลเกมเรียบร้อยแล้ว!' : 'บันทึกข้อมูลเกมเรียบร้อยแล้ว!');
+                }
+
+                closeModal('addGameModal');
+            } catch (unexpectedErr) {
+                console.error(unexpectedErr);
+                showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง', true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> <span>บันทึกข้อมูลเกม</span>`;
+            }
         }
 
         function promptDeleteGame(gameId) {
