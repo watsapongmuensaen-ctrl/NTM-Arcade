@@ -98,6 +98,18 @@
                     <i class="fa-solid fa-arrows-rotate" id="syncIcon"></i>
                 </button>
 
+                <!-- Lock Dev Mode Button (Visible when unlocked) -->
+                <button onclick="lockDevMode()" id="devUnlockedBadge" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-rose-50 text-emerald-700 hover:text-rose-600 border border-emerald-200 hover:border-rose-200 text-xs font-semibold transition" title="คลิกเพื่อล็อกโหมดผู้พัฒนา">
+                    <i class="fa-solid fa-unlock-keyhole"></i>
+                    <span class="hidden md:inline">โหมดผู้พัฒนา (ล็อก)</span>
+                </button>
+
+                <!-- Backend Management & Theme Customization Button -->
+                <button onclick="requireDevAuth(() => openAdminModal('manage'))" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium transition" title="สำหรับผู้พัฒนา: แก้ไขเกม ตกแต่งเว็บไซต์ และตั้งค่าระบบ (ต้องใช้รหัสผ่าน)">
+                    <i class="fa-solid fa-sliders text-indigo-600"></i>
+                    <span class="hidden sm:inline">จัดการหลังบ้าน / ตกแต่งเว็บ</span>
+                </button>
+
                 <!-- Upload / Add Game Button -->
                 <button onclick="openAddGameModal()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-medium shadow-md shadow-indigo-600/20 transition">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
@@ -107,10 +119,14 @@
         </div>
     </header>
 
-    <!-- Hero Banner Section (Clean for Students & Visitors) -->
-    <section class="hero-gradient text-white relative overflow-hidden">
+    <!-- Hero Banner Section (Customizable Background Color, Image & Descriptions) -->
+    <section id="heroSection" class="hero-gradient text-white relative overflow-hidden transition-colors duration-300">
+        <!-- Custom Background Image Layer -->
+        <div id="heroBgImageLayer" class="absolute inset-0 bg-cover bg-center bg-no-repeat pointer-events-none hidden"></div>
+        <div id="heroBgOverlay" class="absolute inset-0 bg-slate-950/50 pointer-events-none hidden"></div>
+
         <!-- Decorative Background Patterns -->
-        <div class="absolute inset-0 opacity-10 pointer-events-none">
+        <div id="heroDecorLayer" class="absolute inset-0 opacity-10 pointer-events-none">
             <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-indigo-400 blur-3xl"></div>
             <div class="absolute bottom-0 left-1/4 w-80 h-80 rounded-full bg-violet-400 blur-3xl"></div>
         </div>
@@ -119,21 +135,11 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div class="lg:col-span-7 space-y-4">
                     <h1 class="font-display text-3xl sm:text-5xl font-bold leading-tight tracking-tight">
-                        NTM <span class="text-amber-300">EduGame Hub</span>
+                        <span id="heroTitleMain">NTM</span> <span id="heroTitleHighlight" class="text-amber-300">EduGame Hub</span>
                     </h1>
-                    <p class="text-indigo-100 text-sm sm:text-base leading-relaxed max-w-2xl">
+                    <p id="heroDescText" class="text-indigo-100 text-sm sm:text-base leading-relaxed max-w-2xl">
                         แหล่งรวบรวมสื่อการเรียนรู้รูปแบบเกมอินเทอร์แอคทีฟ เสริมสร้างทักษะการคิดวิเคราะห์ การแก้ปัญหา และการเรียนรู้ทุกกลุ่มสาระอย่างสนุกสนาน เข้าเล่นได้ทันทีทุกอุปกรณ์
                     </p>
-                    <div class="pt-2 flex flex-wrap gap-3">
-                        <button onclick="document.getElementById('searchInput').focus()" class="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-900 font-semibold text-sm flex items-center gap-2 shadow-lg transition">
-                            <i class="fa-solid fa-gamepad"></i>
-                            เลือกเล่นเกมการเรียนรู้
-                        </button>
-                        <button onclick="openAddGameModal()" class="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 text-white font-medium text-sm flex items-center gap-2 transition">
-                            <i class="fa-solid fa-plus-circle text-amber-300"></i>
-                            เพิ่มเกมสื่อการเรียนรู้ใหม่
-                        </button>
-                    </div>
                 </div>
 
                 <!-- Right Stats Card -->
@@ -280,155 +286,55 @@
     </main>
 
     <!-- =====================================================================
-         MODAL 1: อัปโหลด / แก้ไขข้อมูลเกม (#addGameModal)
+         MODAL 1: อัปโหลด / แก้ไขข้อมูลเกมสื่อการเรียนรู้ (#addGameModal)
     ====================================================================== -->
     <div id="addGameModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
         <div class="bg-white rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 max-h-[92vh] flex flex-col">
             <!-- Modal Header -->
-            <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+            <div class="px-6 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-cloud-arrow-up text-indigo-400 text-lg"></i>
+                    <i class="fa-solid fa-cloud-arrow-up text-lg"></i>
                     <h2 id="formModalTitle" class="font-display font-bold text-lg">อัปโหลดเกมสื่อการเรียนรู้ใหม่</h2>
                 </div>
-                <button onclick="closeModal('addGameModal')" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
+                <button type="button" onclick="closeModal('addGameModal')" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
 
             <!-- Modal Form Body -->
-            <form id="gameForm" onsubmit="handleGameSubmit(event)" class="p-6 overflow-y-auto space-y-5 flex-1">
-                <input type="hidden" id="gameIdInput">
+            <form id="gameForm" onsubmit="handleGameSubmit(event)" class="p-6 overflow-y-auto space-y-5 flex-1 text-sm">
+                <input type="hidden" id="gameIdInput" value="">
 
-                <!-- 1. Image Upload Section -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-semibold text-slate-800">
-                        1. รูปภาพหน้าปกเกม (อัปโหลดไฟล์ภาพ หรือใส่ลิงก์รูปภาพ) <span class="text-rose-500">*</span>
-                    </label>
-
-                    <!-- Toggle Tabs for Image Input -->
-                    <div class="flex gap-2 mb-2">
-                        <button type="button" id="tabImgUpload" onclick="switchImageTab('upload')" class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white transition">
-                            <i class="fa-solid fa-upload mr-1"></i> อัปโหลดไฟล์รูปภาพจากเครื่อง
-                        </button>
-                        <button type="button" id="tabImgUrl" onclick="switchImageTab('url')" class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-                            <i class="fa-solid fa-link mr-1"></i> ใช้ลิงก์รูปภาพ (Image URL)
-                        </button>
-                    </div>
-
-                    <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
-                        <!-- Image Preview Box -->
-                        <div class="sm:col-span-5">
-                            <div class="aspect-video rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 overflow-hidden relative flex items-center justify-center">
-                                <img id="imagePreview" src="" alt="Preview" class="hidden w-full h-full object-cover">
-                                <div id="imagePlaceholder" class="text-center p-3 text-slate-400">
-                                    <i class="fa-regular fa-image text-2xl mb-1 block"></i>
-                                    <span class="text-xs">ตัวอย่างภาพหน้าปก</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Upload Controls -->
-                        <div class="sm:col-span-7 space-y-2">
-                            <!-- File Upload Mode -->
-                            <div id="panelImgUpload" class="space-y-2">
-                                <label class="flex flex-col items-center justify-center px-4 py-4 bg-indigo-50/60 hover:bg-indigo-50 border border-indigo-200 rounded-xl cursor-pointer transition text-center">
-                                    <i class="fa-solid fa-file-image text-indigo-600 text-xl mb-1"></i>
-                                    <span class="text-xs font-semibold text-indigo-900">คลิกเพื่อเลือกไฟล์รูปภาพหน้าปกเกม</span>
-                                    <span class="text-[11px] text-slate-500 mt-0.5">รองรับ PNG, JPG, WEBP (ย่อและบีบอัดอัตโนมัติเพื่อบันทึกใน Google Sheets)</span>
-                                    <input type="file" id="imageFileInput" accept="image/*" class="hidden" onchange="handleImageFileSelect(event)">
-                                </label>
-                            </div>
-
-                            <!-- Image URL Mode -->
-                            <div id="panelImgUrl" class="hidden space-y-1.5">
-                                <input
-                                    type="url"
-                                    id="imageUrlInput"
-                                    oninput="handleImageUrlInput(this.value)"
-                                    placeholder="https://example.com/game-cover.png"
-                                    class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                >
-                                <p class="text-[11px] text-slate-500">วางลิงก์รูปภาพโดยตรงเพื่อแสดงเป็นปกเกม</p>
-                            </div>
-
-                            <p id="imageSizeInfo" class="text-[11px] text-emerald-600 font-medium hidden"></p>
-                        </div>
-                    </div>
+                <!-- Game Title -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อเกมสื่อการเรียนรู้ <span class="text-rose-500">*</span></label>
+                    <input
+                        type="text"
+                        id="titleInput"
+                        required
+                        placeholder="เช่น ภารกิจคณิตพิชิตอุกกาบาต (Math Defender)"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                    >
                 </div>
 
-                <!-- 2. Game Play Link (Confidential Source Code) -->
-                <div class="bg-indigo-50/70 border border-indigo-200/80 rounded-xl p-4 space-y-3">
-                    <div class="flex items-center justify-between">
-                        <label class="text-sm font-semibold text-indigo-950 flex items-center gap-1.5">
-                            <i class="fa-solid fa-gamepad text-indigo-600 text-base"></i>
-                            2. ลิงก์สำหรับเข้าเล่นเกม <span class="text-rose-500">*</span>
-                        </label>
-                        <span class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-medium">
-                            <i class="fa-solid fa-shield-halved mr-1"></i>ปกปิดซอร์สโค้ด
-                        </span>
-                    </div>
-
-                    <div class="space-y-2">
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <input
-                                type="url"
-                                id="playUrlInput"
-                                required
-                                oninput="autoDetectGithubInput(this.value)"
-                                placeholder="เช่น https://username.github.io/game-name/"
-                                class="flex-1 px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            >
-                            <button
-                                type="button"
-                                onclick="convertRepoToPagesUrl()"
-                                class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium shrink-0 transition"
-                                title="แปลงลิงก์ GitHub Repo เป็นลิงก์เข้าเล่นเกมอัตโนมัติ"
-                            >
-                                <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> แปลงเป็นลิงก์เล่นเกม
-                            </button>
-                        </div>
-                        <p class="text-[11px] text-slate-500">
-                            หากวางลิงก์ GitHub Repo ระบบจะแปลงเป็นลิงก์เว็บเล่นเกม (`github.io`) อัตโนมัติ โดยไม่บันทึกหรือแสดงลิงก์ซอร์สโค้ดต้นฉบับ
-                        </p>
-                    </div>
-                </div>
-
-                <!-- 3. Game Details -->
+                <!-- Subject & Grade Level -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            ชื่อเกมสื่อการเรียนรู้ <span class="text-rose-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            id="titleInput"
-                            required
-                            placeholder="เช่น ภารกิจคณิตพิชิตอุกกาบาต (Math Defender)"
-                            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
-                    </div>
-
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            กลุ่มสาระการเรียนรู้ / หมวดหมู่ <span class="text-rose-500">*</span>
-                        </label>
-                        <select id="subjectInput" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                            <option value="วิทยาศาสตร์และเทคโนโลยี">🧪 วิทยาศาสตร์และเทคโนโลยี</option>
-                            <option value="วิทยาการคำนวณ">💻 วิทยาการคำนวณ</option>
-                            <option value="คณิตศาสตร์">🔢 คณิตศาสตร์</option>
-                            <option value="ภาษาไทย">📖 ภาษาไทย</option>
-                            <option value="ภาษาอังกฤษ">🌐 ภาษาอังกฤษ</option>
-                            <option value="สังคมศึกษา">🌍 สังคมศึกษา</option>
-                            <option value="เชาวน์ปัญญาและตรรกะ">🧩 เชาวน์ปัญญาและตรรกะ</option>
-                            <option value="อื่นๆ">✨ อื่นๆ</option>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">กลุ่มสาระการเรียนรู้ <span class="text-rose-500">*</span></label>
+                        <select id="subjectInput" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
+                            <option value="วิทยาศาสตร์และเทคโนโลยี">วิทยาศาสตร์และเทคโนโลยี</option>
+                            <option value="วิทยาการคำนวณ">วิทยาการคำนวณ</option>
+                            <option value="คณิตศาสตร์">คณิตศาสตร์</option>
+                            <option value="ภาษาไทย">ภาษาไทย</option>
+                            <option value="ภาษาอังกฤษ">ภาษาอังกฤษ</option>
+                            <option value="สังคมศึกษา">สังคมศึกษา</option>
+                            <option value="เชาวน์ปัญญาและตรรกะ">เชาวน์ปัญญาและตรรกะ</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
                         </select>
                     </div>
-
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            ระดับชั้น <span class="text-rose-500">*</span>
-                        </label>
-                        <select id="gradeInput" required class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">ระดับชั้น <span class="text-rose-500">*</span></label>
+                        <select id="gradeInput" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white">
                             <option value="ประถมศึกษา (ป.1-ป.6)">ประถมศึกษา (ป.1-ป.6)</option>
                             <option value="ป.1">ป.1</option>
                             <option value="ป.2">ป.2</option>
@@ -436,42 +342,102 @@
                             <option value="ป.4">ป.4</option>
                             <option value="ป.5">ป.5</option>
                             <option value="ป.6">ป.6</option>
-                            <option value="ทุกระดับชั้น">ทุกระดับชั้น</option>
                         </select>
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            คำอธิบายเกมและจุดประสงค์การเรียนรู้ <span class="text-rose-500">*</span>
-                        </label>
-                        <textarea
-                            id="descInput"
-                            rows="3"
-                            required
-                            placeholder="อธิบายวิธีการเล่นและทักษะที่ผู้เรียนจะได้รับจากเกมนี้..."
-                            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        ></textarea>
-                    </div>
-
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">
-                            ชื่อผู้จัดทำ / ครูผู้สอน
-                        </label>
-                        <input
-                            type="text"
-                            id="authorInput"
-                            placeholder="เช่น ครูวรรษพงษ์ หมื่นแสน โรงเรียนวัดเนินตามาก"
-                            class="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        >
                     </div>
                 </div>
 
-                <!-- Modal Footer Actions -->
+                <!-- Cover Image Upload / URL -->
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-700">รูปภาพหน้าปกเกม</label>
+                        <div class="flex gap-1.5">
+                            <button type="button" id="tabImgUpload" onclick="switchImageTab('upload')" class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-600 text-white transition">
+                                <i class="fa-solid fa-upload mr-1"></i>อัปโหลดไฟล์ภาพ
+                            </button>
+                            <button type="button" id="tabImgUrl" onclick="switchImageTab('url')" class="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+                                <i class="fa-solid fa-link mr-1"></i>ใส่ลิงก์รูปภาพ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload File Panel -->
+                    <div id="panelImgUpload">
+                        <label class="flex flex-col items-center justify-center w-full py-4 px-4 border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-xl bg-indigo-50/40 cursor-pointer transition text-center">
+                            <i class="fa-solid fa-image text-indigo-500 text-xl mb-1"></i>
+                            <span class="text-xs font-medium text-slate-700">คลิกเพื่อเลือกรูปภาพหน้าปกเกมจากเครื่อง</span>
+                            <span class="text-[11px] text-slate-400 mt-0.5">ระบบจะย่อและบีบอัดขนาดภาพอัตโนมัติเพื่อบันทึกลง Google Sheets</span>
+                            <input type="file" id="imageFileInput" accept="image/*" onchange="handleImageFileSelect(event)" class="hidden">
+                        </label>
+                    </div>
+
+                    <!-- Image URL Panel -->
+                    <div id="panelImgUrl" class="hidden">
+                        <input
+                            type="url"
+                            id="imageUrlInput"
+                            oninput="handleImageUrlInput(this.value)"
+                            placeholder="https://example.com/game-cover.jpg"
+                            class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white"
+                        >
+                    </div>
+
+                    <!-- Image Preview Box -->
+                    <div class="aspect-video w-full max-w-sm mx-auto rounded-xl border border-slate-200 bg-slate-100 overflow-hidden relative flex items-center justify-center">
+                        <img id="imagePreview" src="" alt="Preview" class="hidden w-full h-full object-cover">
+                        <div id="imagePlaceholder" class="text-center p-4 text-slate-400 text-xs">
+                            <i class="fa-regular fa-image text-2xl mb-1 block"></i>
+                            <span>ตัวอย่างรูปภาพหน้าปกเกม</span>
+                        </div>
+                    </div>
+                    <p id="imageSizeInfo" class="hidden text-[11px] text-emerald-600 text-center font-medium"></p>
+                </div>
+
+                <!-- Game Play URL -->
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-700">ลิงก์เข้าเล่นเกม <span class="text-rose-500">*</span></label>
+                        <button type="button" onclick="convertRepoToPagesUrl()" class="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> แปลงลิงก์เป็นเว็บเข้าเล่นอัตโนมัติ
+                        </button>
+                    </div>
+                    <input
+                        type="url"
+                        id="playUrlInput"
+                        required
+                        oninput="autoDetectGithubInput(this.value)"
+                        placeholder="https://username.github.io/game-name/"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                    >
+                </div>
+
+                <!-- Description (Optional) -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">คำอธิบายเกม / จุดประสงค์การเรียนรู้ <span class="text-slate-400 font-normal">(ไม่บังคับ สามารถเพิ่มภายหลังได้)</span></label>
+                    <textarea
+                        id="descInput"
+                        rows="3"
+                        placeholder="อธิบายวิธีการเล่นและทักษะที่ผู้เรียนจะได้รับ (เว้นว่างไว้เพื่อมาใส่ภายหลังได้)..."
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                    ></textarea>
+                </div>
+
+                <!-- Author -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อผู้พัฒนา / ครูผู้สอน</label>
+                    <input
+                        type="text"
+                        id="authorInput"
+                        placeholder="เช่น ครูวรรษพงษ์ หมื่นแสน"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                    >
+                </div>
+
+                <!-- Submit Actions -->
                 <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
                     <button type="button" onclick="closeModal('addGameModal')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition">
                         ยกเลิก
                     </button>
-                    <button type="submit" id="submitGameBtn" class="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md shadow-indigo-600/20 flex items-center gap-2 transition">
+                    <button type="submit" id="submitGameBtn" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold flex items-center gap-2 shadow-md shadow-indigo-600/20 transition">
                         <i class="fa-solid fa-floppy-disk"></i>
                         <span>บันทึกข้อมูลเกม</span>
                     </button>
@@ -481,55 +447,49 @@
     </div>
 
     <!-- =====================================================================
-         MODAL 2: หน้าต่างเล่นเกมในเว็บ (#playModal)
+         MODAL 2: หน้าต่างเล่นเกมในหน้าเว็บ (#playModal)
     ====================================================================== -->
-    <div id="playModal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-6">
-        <div id="playModalContainer" class="bg-slate-900 rounded-2xl max-w-6xl w-full h-[90vh] shadow-2xl border border-slate-700 overflow-hidden flex flex-col">
+    <div id="playModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+        <div class="bg-slate-900 rounded-2xl max-w-6xl w-full h-[90vh] shadow-2xl border border-slate-700 overflow-hidden flex flex-col">
             <!-- Top Bar -->
-            <div class="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3">
-                <div class="flex items-center gap-3 min-w-0">
-                    <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
-                        <i class="fa-solid fa-gamepad"></i>
-                    </span>
-                    <div class="truncate">
-                        <h3 id="playModalTitle" class="font-display font-bold text-white text-sm sm:text-base truncate">กำลังโหลดเกม...</h3>
-                        <p id="playModalSub" class="text-xs text-slate-400 truncate"></p>
-                    </div>
+            <div class="px-4 sm:px-6 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0">
+                <div class="min-w-0">
+                    <h3 id="playModalTitle" class="font-display font-bold text-white text-sm sm:text-base truncate">กำลังโหลดเกม...</h3>
+                    <p id="playModalSub" class="text-xs text-slate-400 truncate"></p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                    <button onclick="toggleGameFullscreen()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition" title="ขยายเต็มจอ">
+                    <button type="button" onclick="toggleGameFullscreen()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium flex items-center gap-1.5 transition">
                         <i class="fa-solid fa-expand"></i>
                         <span class="hidden sm:inline">เต็มจอ</span>
                     </button>
-                    <a id="playModalExternalBtn" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1.5 transition">
+                    <a id="playModalExternalBtn" href="#" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium flex items-center gap-1.5 transition">
                         <i class="fa-solid fa-up-right-from-square"></i>
                         <span>เปิดหน้าจอแยก</span>
                     </a>
-                    <button onclick="closePlayModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition">
+                    <button type="button" onclick="closePlayModal()" class="w-8 h-8 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white flex items-center justify-center transition">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
                 </div>
             </div>
-
-            <!-- Iframe Area -->
-            <div class="flex-1 bg-slate-950 relative">
-                <iframe id="gameIframe" src="about:blank" class="w-full h-full border-0" allow="fullscreen; autoplay; camera; microphone; clipboard-write"></iframe>
+            <!-- Game Iframe Container -->
+            <div class="flex-1 bg-black relative">
+                <iframe id="gameIframe" src="about:blank" class="w-full h-full border-0" allow="fullscreen; autoplay; clipboard-write" allowfullscreen></iframe>
             </div>
         </div>
     </div>
 
     <!-- =====================================================================
-         MODAL 3: ตั้งค่าฐานข้อมูลสำหรับผู้ดูแลระบบ (#sheetsModal - เปิดผ่านปุ่ม 🔒)
+         MODAL 3: ระบบจัดการหลังบ้าน & ตั้งค่าฐานข้อมูล Google Sheets (#sheetsModal)
     ====================================================================== -->
     <div id="sheetsModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 max-h-[92vh] flex flex-col">
+        <div class="bg-white rounded-2xl max-w-4xl w-full shadow-2xl border border-slate-200 overflow-hidden my-8 max-h-[92vh] flex flex-col">
             <!-- Header -->
             <div class="px-6 py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-2.5">
-                    <i class="fa-solid fa-lock text-amber-400 text-lg"></i>
+                    <i class="fa-solid fa-sliders text-amber-400 text-lg"></i>
                     <div>
-                        <h2 class="font-display font-bold text-lg">ตั้งค่าผู้ดูแลระบบ & ฐานข้อมูล Google Sheets</h2>
-                        <p class="text-xs text-slate-300">หน้าต่างส่วนตัวสำหรับผู้ดูแลระบบ NTM EduGame Hub</p>
+                        <h2 class="font-display font-bold text-lg">ระบบจัดการหลังบ้าน (NTM EduGame Hub)</h2>
+                        <p class="text-xs text-slate-300">จัดการแก้ไข-ลบรายการเกม และตั้งค่าการเชื่อมต่อฐานข้อมูล Google Sheets</p>
                     </div>
                 </div>
                 <button onclick="closeModal('sheetsModal')" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white transition">
@@ -537,11 +497,27 @@
                 </button>
             </div>
 
+            <!-- Admin Navigation Tabs -->
+            <div class="px-6 pt-3 bg-slate-100 border-b border-slate-200 flex flex-wrap gap-2 shrink-0">
+                <button type="button" id="adminTabManageBtn" onclick="switchAdminTab('manage')" class="px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold bg-white text-indigo-600 border-t border-x border-slate-200 -mb-px flex items-center gap-2 transition">
+                    <i class="fa-solid fa-table-list"></i>
+                    <span>จัดการและแก้ไขเกมทั้งหมด</span>
+                </button>
+                <button type="button" id="adminTabThemeBtn" onclick="switchAdminTab('theme')" class="px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-palette"></i>
+                    <span>ตกแต่งพื้นหลัง & เปลี่ยนรหัสผ่าน</span>
+                </button>
+                <button type="button" id="adminTabConfigBtn" onclick="switchAdminTab('config')" class="px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-database"></i>
+                    <span>ตั้งค่า Google Sheets & โค้ด Code.gs</span>
+                </button>
+            </div>
+
             <!-- Body -->
             <div class="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
 
                 <!-- Connection Status Banner -->
-                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex items-center justify-between gap-3">
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-3">
                         <span id="adminStatusDot" class="w-3 h-3 rounded-full bg-amber-500"></span>
                         <div>
@@ -549,58 +525,246 @@
                             <p id="adminStatusText" class="text-xs text-slate-500">โหมดบันทึกในเครื่อง (ยังไม่ได้ระบุ Google Apps Script URL)</p>
                         </div>
                     </div>
-                    <button onclick="syncFromGoogleSheets()" class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium flex items-center gap-1.5 transition">
-                        <i class="fa-solid fa-arrows-rotate"></i> ซิงค์ข้อมูลตอนนี้
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <button onclick="syncFromGoogleSheets()" class="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-medium flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-arrows-rotate"></i> ซิงค์ข้อมูลล่าสุด
+                        </button>
+                        <button onclick="closeModal('sheetsModal'); openAddGameModal();" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium flex items-center gap-1.5 transition">
+                            <i class="fa-solid fa-plus"></i> เพิ่มเกมใหม่
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Option 1: Full Read/Write via Google Apps Script Web App -->
-                <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-5 space-y-4">
-                    <div>
-                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-600 text-white">อ่าน + บันทึกเกมลง Google Sheets อัตโนมัติ</span>
-                        <h3 class="font-bold text-base text-slate-900 mt-1.5">Google Apps Script Web App URL</h3>
-                        <p class="text-xs text-slate-600">เมื่อเชื่อมต่อแล้ว การกดอัปโหลดเกม ลบเกม หรือนับยอดเข้าเล่น จะถูกบันทึกลงใน Google Sheets ทันที</p>
+                <!-- TAB 1: จัดการรายการเกมหลังบ้าน (แก้ไข / ลบ / แก้คำอธิบาย) -->
+                <div id="adminPanelManage" class="space-y-4">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-sm">ตารางจัดการข้อมูลและคำอธิบายเกมทั้งหมด</h3>
+                            <p class="text-xs text-slate-500">คลิกปุ่ม "แก้ไขข้อมูล/คำอธิบาย" เพื่อปรับแก้ชื่อเกม รูปหน้าปก ลิงก์ หรือเพิ่มคำอธิบายเกมได้ตลอดเวลา</p>
+                        </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <label class="block text-xs font-semibold text-slate-700">วางลิงก์ Web App URL (ที่ลงท้ายด้วย /exec):</label>
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <input
-                                type="url"
-                                id="scriptUrlInput"
-                                placeholder="https://script.google.com/macros/s/AKfycb.../exec"
-                                class="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
-                            >
-                            <button onclick="saveGoogleSheetConfig()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shrink-0 transition">
-                                <i class="fa-solid fa-plug mr-1"></i> บันทึกและเชื่อมต่อ
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-xs">
+                                        <th class="py-3 px-4 font-semibold">เกมสื่อการเรียนรู้ & คำอธิบาย</th>
+                                        <th class="py-3 px-3 font-semibold">กลุ่มสาระฯ / ระดับชั้น</th>
+                                        <th class="py-3 px-3 font-semibold text-center">ยอดเข้าเล่น</th>
+                                        <th class="py-3 px-4 font-semibold text-right">การจัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adminGamesTableBody" class="divide-y divide-slate-200 text-xs">
+                                    <!-- Injected by renderAdminGamesTable() -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: ตกแต่งพื้นหลัง สี ฉากหลัง คำอธิบายเว็บ และเปลี่ยนรหัสผ่านผู้พัฒนา -->
+                <div id="adminPanelTheme" class="hidden space-y-6">
+                    <!-- Section A: Site Colors & Background Image -->
+                    <div class="bg-indigo-50/50 border border-indigo-200/80 rounded-2xl p-5 space-y-5">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-indigo-200/60 pb-3">
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-paintbrush text-indigo-600"></i>
+                                    ปรับแต่งสีฉากหลัง รูปพื้นหลัง (Background) และข้อความหน้าเว็บ
+                                </h3>
+                                <p class="text-xs text-slate-500">ออกแบบบรรยากาศเว็บไซต์ได้ตามต้องการ สามารถสลับสีพื้นหลังหรือใส่ภาพ Background ได้ทันที</p>
+                            </div>
+                            <button type="button" onclick="resetSiteCustomization()" class="px-3 py-1.5 rounded-lg bg-white hover:bg-rose-50 text-slate-600 hover:text-rose-600 border border-slate-200 text-xs font-medium transition">
+                                <i class="fa-solid fa-rotate-left mr-1"></i> คืนค่าเริ่มต้น
+                            </button>
+                        </div>
+
+                        <!-- Preset Color Themes -->
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700">ธีมสีสำเร็จรูป (คลิกเลือกได้ทันที):</label>
+                            <div class="flex flex-wrap gap-2">
+                                <button type="button" onclick="applyThemePreset('#f8fafc', '#1e1b4b', '#4338ca')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-indigo-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-indigo-950 to-indigo-600"></span> ครามมาตรฐาน (Default)
+                                </button>
+                                <button type="button" onclick="applyThemePreset('#f0fdf4', '#064e3b', '#059669')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-emerald-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-emerald-950 to-emerald-600"></span> เขียวธรรมชาติวิทย์
+                                </button>
+                                <button type="button" onclick="applyThemePreset('#f0f9ff', '#0c4a6e', '#0284c7')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-sky-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-sky-950 to-sky-600"></span> ฟ้าอวกาศเทคโนโลยี
+                                </button>
+                                <button type="button" onclick="applyThemePreset('#fdf4ff', '#4a044e', '#9333ea')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-purple-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-fuchsia-950 to-purple-600"></span> ม่วงแฟนตาซีเกมเมอร์
+                                </button>
+                                <button type="button" onclick="applyThemePreset('#fffbeb', '#78350f', '#d97706')" class="px-3 py-1.5 rounded-xl bg-white border border-slate-200 hover:border-amber-500 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-gradient-to-r from-amber-900 to-amber-600"></span> ส้มทองอบอุ่น
+                                </button>
+                                <button type="button" onclick="applyThemePreset('#0f172a', '#020617', '#1e1b4b')" class="px-3 py-1.5 rounded-xl bg-slate-900 text-white border border-slate-700 text-xs font-medium flex items-center gap-2 shadow-sm transition">
+                                    <span class="w-4 h-4 rounded-full bg-slate-950 border border-white/30"></span> โหมดมืด (Dark Space)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Color Pickers -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีพื้นหลังหน้าเว็บ (Body Background)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customBodyBgColor" value="#f8fafc" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300">
+                                    <input type="text" id="customBodyBgText" value="#f8fafc" oninput="document.getElementById('customBodyBgColor').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีแบนเนอร์หลัก (ฝั่งซ้าย)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customHeroColorStart" value="#1e1b4b" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300">
+                                    <input type="text" id="customHeroColorStartText" value="#1e1b4b" oninput="document.getElementById('customHeroColorStart').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                            <div class="bg-white p-3.5 rounded-xl border border-slate-200 space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700">สีแบนเนอร์หลัก (ฝั่งขวา)</label>
+                                <div class="flex items-center gap-2">
+                                    <input type="color" id="customHeroColorEnd" value="#4338ca" onchange="previewCustomTheme()" class="w-10 h-9 rounded cursor-pointer border border-slate-300">
+                                    <input type="text" id="customHeroColorEndText" value="#4338ca" oninput="document.getElementById('customHeroColorEnd').value=this.value; previewCustomTheme();" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Background Image Upload & URL (Hero Banner & Page Background) -->
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-800">ภาพพื้นหลัง (Background Image)</label>
+                                    <p class="text-[11px] text-slate-500">เลือกอัปโหลดภาพจากเครื่อง หรือวางลิงก์รูปภาพเพื่อใช้เป็นฉากหลังแบนเนอร์หรือพื้นหลังทั้งเว็บ</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <select id="customBgTarget" onchange="previewCustomTheme()" class="px-2.5 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-xs font-medium text-slate-700">
+                                        <option value="hero">แสดงเฉพาะแบนเนอร์ด้านบน</option>
+                                        <option value="both">แสดงทั้งแบนเนอร์และพื้นหลังเว็บ</option>
+                                    </select>
+                                    <button type="button" onclick="clearCustomBgImage()" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-medium transition">
+                                        ลบรูปพื้นหลัง
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <label class="flex items-center justify-center gap-2 px-4 py-2.5 border-2 border-dashed border-indigo-200 hover:border-indigo-400 rounded-xl bg-indigo-50/40 cursor-pointer text-xs font-medium text-indigo-700 transition">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                    <span>อัปโหลดรูปพื้นหลังจากเครื่อง</span>
+                                    <input type="file" accept="image/*" onchange="handleBgImageFileUpload(event)" class="hidden">
+                                </label>
+                                <input
+                                    type="url"
+                                    id="customBgImageUrlInput"
+                                    oninput="handleBgImageUrlChange(this.value)"
+                                    placeholder="หรือวางลิงก์รูปภาพ https://..."
+                                    class="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Site Title & Description Customization -->
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 space-y-3">
+                            <label class="block text-xs font-semibold text-slate-800">ข้อความหัวข้อและคำอธิบายคลังเกมหน้าแรก</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[11px] text-slate-500 mb-1">ชื่อหัวข้อหลัก (ส่วนหน้า)</label>
+                                    <input type="text" id="customHeroTitleMain" value="NTM" oninput="previewCustomTheme()" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-500 mb-1">ชื่อหัวข้อสีไฮไลท์ (ส่วนหลัง)</label>
+                                    <input type="text" id="customHeroTitleHighlight" value="EduGame Hub" oninput="previewCustomTheme()" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] text-slate-500 mb-1">คำอธิบายแบนเนอร์หลัก</label>
+                                <textarea id="customHeroDescInput" rows="2" oninput="previewCustomTheme()" class="w-full px-3 py-2 rounded-lg bg-slate-50 border border-slate-200 text-xs"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="button" onclick="saveSiteCustomization()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm flex items-center gap-2 shadow-md shadow-indigo-600/20 transition">
+                                <i class="fa-solid fa-floppy-disk"></i>
+                                <span>บันทึกการตกแต่งเว็บไซต์</span>
                             </button>
                         </div>
                     </div>
 
-                    <!-- Optional CSV Read-only Link -->
-                    <div class="pt-2 border-t border-emerald-200/70 space-y-2">
-                        <label class="block text-xs font-semibold text-slate-700">หรือลิงก์ CSV จากการเผยแพร่ Google Sheets (กรณีต้องการดึงข้อมูลอ่านอย่างเดียว):</label>
-                        <input
-                            type="url"
-                            id="csvUrlInput"
-                            placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv"
-                            class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600"
-                        >
+                    <!-- Section B: Change Developer Password / PIN -->
+                    <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 space-y-4">
+                        <div>
+                            <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+                                <i class="fa-solid fa-key text-amber-600"></i>
+                                เปลี่ยนรหัสผ่านสำหรับผู้พัฒนา (Developer PIN)
+                            </h3>
+                            <p class="text-xs text-slate-600">รหัสผ่านเริ่มต้นคือ <strong>12345</strong> สามารถกำหนดรหัสผ่านใหม่เพื่อใช้ป้องกันก่อนการแก้ไขหรือลบข้อมูลได้</p>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่านปัจจุบัน</label>
+                                <input type="password" id="currentPinInput" placeholder="กรอกรหัสปัจจุบัน (เช่น 12345)" class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่านใหม่ที่ต้องการตั้ง</label>
+                                <input type="password" id="newPinInput" placeholder="ตั้งรหัสผ่านใหม่" class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <button type="button" onclick="changeDeveloperPin()" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-semibold text-sm transition">
+                                <i class="fa-solid fa-check mr-1"></i> เปลี่ยนรหัสผ่านใหม่
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Apps Script Code Box -->
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between">
-                        <h4 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
-                            <i class="fa-solid fa-code text-indigo-600"></i>
-                            โค้ดสำหรับวางใน Google Apps Script (Code.gs)
-                        </h4>
-                        <button onclick="copyAppsScriptCode()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition">
-                            <i class="fa-regular fa-copy mr-1"></i> คัดลอกโค้ด Code.gs
-                        </button>
+                <!-- TAB 3: ตั้งค่าเชื่อมต่อ Google Sheets & โค้ด Code.gs -->
+                <div id="adminPanelConfig" class="hidden space-y-6">
+                    <!-- Option 1: Full Read/Write via Google Apps Script Web App -->
+                    <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-5 space-y-4">
+                        <div>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-600 text-white">อ่าน + เพิ่ม + แก้ไข + ลบเกมลง Google Sheets อัตโนมัติ</span>
+                            <h3 class="font-bold text-base text-slate-900 mt-1.5">Google Apps Script Web App URL</h3>
+                            <p class="text-xs text-slate-600">เมื่อเชื่อมต่อแล้ว การกดอัปโหลดเกม แก้ไขข้อมูลเกม ลบเกม หรือนับยอดเข้าเล่น จะถูกบันทึกลงใน Google Sheets ทันที</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700">วางลิงก์ Web App URL (ที่ลงท้ายด้วย /exec):</label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input
+                                    type="url"
+                                    id="scriptUrlInput"
+                                    placeholder="https://script.google.com/macros/s/AKfycb.../exec"
+                                    class="flex-1 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                >
+                                <button onclick="saveGoogleSheetConfig()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm shrink-0 transition">
+                                    <i class="fa-solid fa-plug mr-1"></i> บันทึกและเชื่อมต่อ
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Optional CSV Read-only Link -->
+                        <div class="pt-2 border-t border-emerald-200/70 space-y-2">
+                            <label class="block text-xs font-semibold text-slate-700">หรือลิงก์ CSV จากการเผยแพร่ Google Sheets (กรณีต้องการดึงข้อมูลอ่านอย่างเดียว):</label>
+                            <input
+                                type="url"
+                                id="csvUrlInput"
+                                placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv"
+                                class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                            >
+                        </div>
                     </div>
-                    <pre id="appsScriptCodeBlock" class="bg-slate-900 text-emerald-300 p-4 rounded-xl text-xs overflow-x-auto leading-relaxed font-mono">const SHEET_NAME = 'Games';
+
+                    <!-- Apps Script Code Box -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-code text-indigo-600"></i>
+                                โค้ดสำหรับวางใน Google Apps Script (Code.gs) — รองรับการเพิ่ม/แก้ไข/ลบข้อมูล
+                            </h4>
+                            <button onclick="copyAppsScriptCode()" class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs transition">
+                                <i class="fa-regular fa-copy mr-1"></i> คัดลอกโค้ด Code.gs
+                            </button>
+                        </div>
+                        <pre id="appsScriptCodeBlock" class="bg-slate-900 text-emerald-300 p-4 rounded-xl text-xs overflow-x-auto leading-relaxed font-mono">const SHEET_NAME = 'Games';
 const HEADERS = ['id', 'title', 'subject', 'grade', 'description', 'gameUrl', 'image', 'author', 'views', 'createdAt'];
 
 function getOrCreateSheet() {
@@ -661,6 +825,40 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
 
+    if (action === 'edit') {
+      const game = payload.game || payload;
+      const rows = sheet.getDataRange().getValues();
+      let updated = false;
+      for (let i = 1; i &lt; rows.length; i++) {
+        if (String(rows[i][0]) === String(game.id)) {
+          const updatedRow = HEADERS.map((h, colIdx) =&gt; {
+            if (h === 'id') return game.id;
+            if (h === 'views') return Number(game.views ?? game.plays ?? rows[i][colIdx] ?? 0);
+            if (h === 'createdAt') return game.createdAt || rows[i][colIdx] || new Date().toISOString().split('T')[0];
+            if (h === 'image') return game.image || game.imageUrl || rows[i][colIdx] || '';
+            if (h === 'gameUrl') return game.gameUrl || game.playUrl || rows[i][colIdx] || '';
+            return game[h] !== undefined ? game[h] : rows[i][colIdx];
+          });
+          sheet.getRange(i + 1, 1, 1, HEADERS.length).setValues([updatedRow]);
+          updated = true;
+          break;
+        }
+      }
+      if (!updated) {
+        const newRow = HEADERS.map(h =&gt; {
+          if (h === 'id') return game.id || 'game_' + new Date().getTime();
+          if (h === 'views') return Number(game.views || game.plays || 0);
+          if (h === 'createdAt') return game.createdAt || new Date().toISOString().split('T')[0];
+          if (h === 'image') return game.image || game.imageUrl || '';
+          if (h === 'gameUrl') return game.gameUrl || game.playUrl || '';
+          return game[h] !== undefined ? game[h] : '';
+        });
+        sheet.appendRow(newRow);
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: 'success', message: 'Updated' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
     if (action === 'delete' &amp;&amp; payload.id) {
       const rows = sheet.getDataRange().getValues();
       for (let i = 1; i &lt; rows.length; i++) {
@@ -694,6 +892,7 @@ function doPost(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }</pre>
+                    </div>
                 </div>
 
                 <!-- Export / Backup Utility -->
@@ -716,6 +915,77 @@ function doPost(e) {
         </div>
     </div>
 
+    <!-- =====================================================================
+         MODAL 4: ยืนยันการลบเกม (#deleteConfirmModal)
+    ====================================================================== -->
+    <div id="deleteConfirmModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden p-6 space-y-4 text-center">
+            <div class="w-14 h-14 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-2xl">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <div class="space-y-1">
+                <h3 class="font-display font-bold text-lg text-slate-900">ยืนยันการลบเกมสื่อการเรียนรู้?</h3>
+                <p id="deleteConfirmTitle" class="text-sm font-medium text-indigo-600"></p>
+                <p class="text-xs text-slate-500">ข้อมูลของเกมนี้จะถูกลบออกจากหน้าเว็บไซต์และฐานข้อมูล Google Sheets</p>
+            </div>
+            <div class="flex items-center justify-center gap-3 pt-2">
+                <button type="button" onclick="closeModal('deleteConfirmModal')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition">
+                    ยกเลิก
+                </button>
+                <button type="button" id="confirmDeleteBtn" onclick="confirmDeleteGame()" class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold shadow-md shadow-rose-600/20 transition">
+                    ยืนยันการลบ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =====================================================================
+         MODAL 5: ยืนยันรหัสผ่านสำหรับผู้พัฒนา (#pinAuthModal)
+    ====================================================================== -->
+    <div id="pinAuthModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden p-6 space-y-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-display font-bold text-base text-slate-900">ยืนยันสิทธิ์ผู้พัฒนา</h3>
+                        <p class="text-xs text-slate-500">กรอกรหัสผ่านก่อนแก้ไขข้อมูลหรือตกแต่งเว็บไซต์</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('pinAuthModal')" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="submitPinAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">รหัสผ่านผู้พัฒนา (PIN)</label>
+                    <input
+                        type="password"
+                        id="devPinAuthInput"
+                        required
+                        placeholder="กรอกรหัสผ่าน..."
+                        class="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-center text-lg tracking-widest font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition"
+                    >
+                    <p id="pinAuthError" class="hidden text-xs text-rose-600 font-medium mt-1.5 text-center">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i>รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-1">
+                    <button type="button" onclick="closeModal('pinAuthModal')" class="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition">
+                        <i class="fa-solid fa-unlock mr-1"></i> ยืนยันรหัสผ่าน
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Custom Toast Notification -->
     <div id="toastBox" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300">
         <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700 flex items-center gap-3 text-sm">
@@ -735,9 +1005,9 @@ function doPost(e) {
                 <span>พัฒนาเพื่อการศึกษา</span>
                 <!-- Discreet Admin Settings Lock Button -->
                 <button
-                    onclick="openModal('sheetsModal')"
+                    onclick="requireDevAuth(() => openAdminModal('manage'))"
                     class="w-7 h-7 rounded-lg text-slate-300 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition"
-                    title="ตั้งค่าระบบสำหรับผู้ดูแล (Admin)"
+                    title="จัดการระบบหลังบ้าน (Admin)"
                     aria-label="Admin Settings"
                 >
                     <i class="fa-solid fa-lock text-xs"></i>
@@ -757,13 +1027,27 @@ function doPost(e) {
          * มาใส่ในเครื่องหมายคำพูดของ DEFAULT_GOOGLE_SCRIPT_URL ด้านล่างนี้
          * =====================================================================
          */
-        const DEFAULT_GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDxWmmCBa3ttidrzSOGpyFiwQoDUZGvBhMSxNH4LFVXaD6cIGqv_htfxkz29xyLe8x/exec"; // เช่น "https://script.google.com/macros/s/AKfycb.../exec"
+        const DEFAULT_GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDxWmmCBa3ttidrzSOGpyFiwQoDUZGvBhMSxNH4LFVXaD6cIGqv_htfxkz29xyLe8x/exec""; // เช่น "https://script.google.com/macros/s/AKfycb.../exec"
         const DEFAULT_GOOGLE_CSV_URL = "";    // ทางเลือกสำรอง: ลิงก์ CSV จากการ Publish to Web
+        const DEFAULT_DEV_PIN = "12345";      // รหัสผ่านผู้พัฒนาเริ่มต้น
 
         // LocalStorage Keys
         const STORAGE_GAMES_KEY = 'ntm_edugame_hub_games_v1';
         const STORAGE_SCRIPT_URL_KEY = 'ntm_edugame_hub_script_url';
         const STORAGE_CSV_URL_KEY = 'ntm_edugame_hub_csv_url';
+        const STORAGE_PIN_KEY = 'ntm_edugame_hub_dev_pin_v1';
+        const STORAGE_THEME_KEY = 'ntm_edugame_hub_theme_v1';
+
+        const DEFAULT_SITE_THEME = {
+            bodyBgColor: '#f8fafc',
+            heroColorStart: '#1e1b4b',
+            heroColorEnd: '#4338ca',
+            bgImageData: '',
+            bgTarget: 'hero',
+            heroTitleMain: 'NTM',
+            heroTitleHighlight: 'EduGame Hub',
+            heroDesc: 'แหล่งรวบรวมสื่อการเรียนรู้รูปแบบเกมอินเทอร์แอคทีฟ เสริมสร้างทักษะการคิดวิเคราะห์ การแก้ปัญหา และการเรียนรู้ทุกกลุ่มสาระอย่างสนุกสนาน เข้าเล่นได้ทันทีทุกอุปกรณ์'
+        };
 
         // ข้อมูลเกมตัวอย่างเริ่มต้น
         const SAMPLE_GAMES = [
@@ -809,11 +1093,354 @@ function doPost(e) {
         let gamesList = [];
         let currentImageData = '';
         let imageInputMode = 'upload';
+        let pendingDeleteGameId = null;
+        let isDevUnlocked = false;
+        let pendingAuthCallback = null;
+        let siteTheme = { ...DEFAULT_SITE_THEME };
 
         // Initialize App on Load
         window.addEventListener('DOMContentLoaded', () => {
+            loadSiteCustomization();
             initDatabaseConnection();
         });
+
+        /**
+         * ระบบตรวจสอบรหัสผ่านสำหรับผู้พัฒนา (เริ่มต้น 12345 และเปลี่ยนได้ภายหลัง)
+         */
+        function getDeveloperPin() {
+            return localStorage.getItem(STORAGE_PIN_KEY) || DEFAULT_DEV_PIN;
+        }
+
+        function requireDevAuth(actionCallback) {
+            if (isDevUnlocked) {
+                if (typeof actionCallback === 'function') actionCallback();
+                return;
+            }
+            pendingAuthCallback = actionCallback;
+            const pinInput = document.getElementById('devPinAuthInput');
+            const errEl = document.getElementById('pinAuthError');
+            if (pinInput) pinInput.value = '';
+            if (errEl) errEl.classList.add('hidden');
+            openModal('pinAuthModal');
+            setTimeout(() => {
+                if (pinInput) pinInput.focus();
+            }, 80);
+        }
+
+        function submitPinAuth(event) {
+            event.preventDefault();
+            const enteredPin = document.getElementById('devPinAuthInput').value.trim();
+            const validPin = getDeveloperPin();
+            const errEl = document.getElementById('pinAuthError');
+
+            if (enteredPin === validPin) {
+                isDevUnlocked = true;
+                updateDevLockBadge();
+                closeModal('pinAuthModal');
+                showToast('ปลดล็อกโหมดผู้พัฒนาเรียบร้อยแล้ว');
+                if (typeof pendingAuthCallback === 'function') {
+                    const cb = pendingAuthCallback;
+                    pendingAuthCallback = null;
+                    cb();
+                }
+            } else {
+                if (errEl) errEl.classList.remove('hidden');
+            }
+        }
+
+        function lockDevMode() {
+            isDevUnlocked = false;
+            updateDevLockBadge();
+            closeModal('sheetsModal');
+            showToast('ล็อกโหมดผู้พัฒนาเรียบร้อยแล้ว');
+        }
+
+        function updateDevLockBadge() {
+            const badge = document.getElementById('devUnlockedBadge');
+            if (!badge) return;
+            if (isDevUnlocked) {
+                badge.classList.remove('hidden');
+                badge.classList.add('flex');
+            } else {
+                badge.classList.add('hidden');
+                badge.classList.remove('flex');
+            }
+        }
+
+        function changeDeveloperPin() {
+            const currentInput = document.getElementById('currentPinInput').value.trim();
+            const newInput = document.getElementById('newPinInput').value.trim();
+            const actualPin = getDeveloperPin();
+
+            if (currentInput !== actualPin) {
+                showToast('รหัสผ่านปัจจุบันไม่ถูกต้อง', true);
+                return;
+            }
+            if (!newInput || newInput.length < 3) {
+                showToast('กรุณาตั้งรหัสผ่านใหม่อย่างน้อย 3 ตัวอักษร', true);
+                return;
+            }
+
+            localStorage.setItem(STORAGE_PIN_KEY, newInput);
+            document.getElementById('currentPinInput').value = '';
+            document.getElementById('newPinInput').value = '';
+            showToast('เปลี่ยนรหัสผ่านผู้พัฒนาใหม่เรียบร้อยแล้ว!');
+        }
+
+        /**
+         * ระบบตกแต่งสีฉากหลัง ภาพพื้นหลัง (Background) และคำอธิบายเว็บไซต์
+         */
+        function loadSiteCustomization() {
+            const saved = localStorage.getItem(STORAGE_THEME_KEY);
+            if (saved) {
+                try {
+                    siteTheme = { ...DEFAULT_SITE_THEME, ...JSON.parse(saved) };
+                } catch (e) {
+                    siteTheme = { ...DEFAULT_SITE_THEME };
+                }
+            }
+            populateThemeFormInputs();
+            applyThemeToDOM(siteTheme);
+        }
+
+        function populateThemeFormInputs() {
+            const setVal = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.value = val;
+            };
+            setVal('customBodyBgColor', siteTheme.bodyBgColor);
+            setVal('customBodyBgText', siteTheme.bodyBgColor);
+            setVal('customHeroColorStart', siteTheme.heroColorStart);
+            setVal('customHeroColorStartText', siteTheme.heroColorStart);
+            setVal('customHeroColorEnd', siteTheme.heroColorEnd);
+            setVal('customHeroColorEndText', siteTheme.heroColorEnd);
+            setVal('customBgTarget', siteTheme.bgTarget || 'hero');
+            setVal('customBgImageUrlInput', siteTheme.bgImageData && siteTheme.bgImageData.startsWith('http') ? siteTheme.bgImageData : '');
+            setVal('customHeroTitleMain', siteTheme.heroTitleMain);
+            setVal('customHeroTitleHighlight', siteTheme.heroTitleHighlight);
+            setVal('customHeroDescInput', siteTheme.heroDesc);
+        }
+
+        function applyThemeToDOM(themeObj) {
+            // 1. Body background color & optional full-page background image
+            document.body.style.backgroundColor = themeObj.bodyBgColor || DEFAULT_SITE_THEME.bodyBgColor;
+            if (themeObj.bgImageData && themeObj.bgTarget === 'both') {
+                document.body.style.backgroundImage = `url('${themeObj.bgImageData}')`;
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundAttachment = 'fixed';
+                document.body.style.backgroundPosition = 'center';
+            } else {
+                document.body.style.backgroundImage = '';
+            }
+
+            // 2. Hero Banner gradient & optional background image
+            const heroSection = document.getElementById('heroSection');
+            const heroBgImageLayer = document.getElementById('heroBgImageLayer');
+            const heroBgOverlay = document.getElementById('heroBgOverlay');
+            if (heroSection) {
+                const cStart = themeObj.heroColorStart || DEFAULT_SITE_THEME.heroColorStart;
+                const cEnd = themeObj.heroColorEnd || DEFAULT_SITE_THEME.heroColorEnd;
+                heroSection.style.background = `linear-gradient(135deg, ${cStart} 0%, ${cEnd} 100%)`;
+            }
+
+            if (heroBgImageLayer && heroBgOverlay) {
+                if (themeObj.bgImageData) {
+                    heroBgImageLayer.style.backgroundImage = `url('${themeObj.bgImageData}')`;
+                    heroBgImageLayer.classList.remove('hidden');
+                    heroBgOverlay.classList.remove('hidden');
+                } else {
+                    heroBgImageLayer.style.backgroundImage = '';
+                    heroBgImageLayer.classList.add('hidden');
+                    heroBgOverlay.classList.add('hidden');
+                }
+            }
+
+            // 3. Hero Title & Description Text
+            const titleMainEl = document.getElementById('heroTitleMain');
+            const titleHighEl = document.getElementById('heroTitleHighlight');
+            const descEl = document.getElementById('heroDescText');
+            if (titleMainEl) titleMainEl.textContent = themeObj.heroTitleMain || DEFAULT_SITE_THEME.heroTitleMain;
+            if (titleHighEl) titleHighEl.textContent = themeObj.heroTitleHighlight || DEFAULT_SITE_THEME.heroTitleHighlight;
+            if (descEl) descEl.textContent = themeObj.heroDesc || DEFAULT_SITE_THEME.heroDesc;
+        }
+
+        function previewCustomTheme() {
+            const bodyBg = document.getElementById('customBodyBgColor').value;
+            const heroStart = document.getElementById('customHeroColorStart').value;
+            const heroEnd = document.getElementById('customHeroColorEnd').value;
+
+            document.getElementById('customBodyBgText').value = bodyBg;
+            document.getElementById('customHeroColorStartText').value = heroStart;
+            document.getElementById('customHeroColorEndText').value = heroEnd;
+
+            siteTheme.bodyBgColor = bodyBg;
+            siteTheme.heroColorStart = heroStart;
+            siteTheme.heroColorEnd = heroEnd;
+            siteTheme.bgTarget = document.getElementById('customBgTarget').value;
+            siteTheme.heroTitleMain = document.getElementById('customHeroTitleMain').value;
+            siteTheme.heroTitleHighlight = document.getElementById('customHeroTitleHighlight').value;
+            siteTheme.heroDesc = document.getElementById('customHeroDescInput').value;
+
+            applyThemeToDOM(siteTheme);
+        }
+
+        function applyThemePreset(bodyBg, heroStart, heroEnd) {
+            document.getElementById('customBodyBgColor').value = bodyBg;
+            document.getElementById('customHeroColorStart').value = heroStart;
+            document.getElementById('customHeroColorEnd').value = heroEnd;
+            previewCustomTheme();
+            saveSiteCustomization();
+        }
+
+        function handleBgImageFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const maxW = 1280;
+                    const maxH = 720;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxW) {
+                        height = Math.round((height * maxW) / width);
+                        width = maxW;
+                    }
+                    if (height > maxH) {
+                        width = Math.round((width * maxH) / height);
+                        height = maxH;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    siteTheme.bgImageData = canvas.toDataURL('image/jpeg', 0.8);
+                    applyThemeToDOM(siteTheme);
+                    showToast('อัปโหลดภาพพื้นหลังเรียบร้อยแล้ว กดบันทึกเพื่อจำค่า');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function handleBgImageUrlChange(url) {
+            siteTheme.bgImageData = url.trim();
+            applyThemeToDOM(siteTheme);
+        }
+
+        function clearCustomBgImage() {
+            siteTheme.bgImageData = '';
+            const urlInput = document.getElementById('customBgImageUrlInput');
+            if (urlInput) urlInput.value = '';
+            applyThemeToDOM(siteTheme);
+            localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+            showToast('ลบรูปพื้นหลังเรียบร้อยแล้ว');
+        }
+
+        function saveSiteCustomization() {
+            previewCustomTheme();
+            localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+            showToast('บันทึกการตกแต่งสี พื้นหลัง และข้อความเรียบร้อยแล้ว!');
+        }
+
+        function resetSiteCustomization() {
+            siteTheme = { ...DEFAULT_SITE_THEME };
+            localStorage.removeItem(STORAGE_THEME_KEY);
+            populateThemeFormInputs();
+            applyThemeToDOM(siteTheme);
+            showToast('คืนค่าการตกแต่งเริ่มต้นเรียบร้อยแล้ว');
+        }
+
+        /**
+         * ระบบสลับแท็บหน้าต่างจัดการหลังบ้าน (Admin Modal)
+         */
+        function openAdminModal(defaultTab = 'manage') {
+            populateThemeFormInputs();
+            renderAdminGamesTable();
+            switchAdminTab(defaultTab);
+            openModal('sheetsModal');
+        }
+
+        function switchAdminTab(tab) {
+            const manageBtn = document.getElementById('adminTabManageBtn');
+            const themeBtn = document.getElementById('adminTabThemeBtn');
+            const configBtn = document.getElementById('adminTabConfigBtn');
+            const managePanel = document.getElementById('adminPanelManage');
+            const themePanel = document.getElementById('adminPanelTheme');
+            const configPanel = document.getElementById('adminPanelConfig');
+
+            const activeClass = "px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-semibold bg-white text-indigo-600 border-t border-x border-slate-200 -mb-px flex items-center gap-2 transition";
+            const inactiveClass = "px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-medium text-slate-600 hover:text-slate-900 flex items-center gap-2 transition";
+
+            manageBtn.className = tab === 'manage' ? activeClass : inactiveClass;
+            themeBtn.className = tab === 'theme' ? activeClass : inactiveClass;
+            configBtn.className = tab === 'config' ? activeClass : inactiveClass;
+
+            managePanel.classList.toggle('hidden', tab !== 'manage');
+            themePanel.classList.toggle('hidden', tab !== 'theme');
+            configPanel.classList.toggle('hidden', tab !== 'config');
+
+            if (tab === 'manage') renderAdminGamesTable();
+        }
+
+        function renderAdminGamesTable() {
+            const tbody = document.getElementById('adminGamesTableBody');
+            if (!tbody) return;
+
+            if (gamesList.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-slate-400">
+                            ยังไม่มีรายการเกมในระบบ กดปุ่ม "+ เพิ่มเกมใหม่" เพื่อเริ่มต้น
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = gamesList.map(game => {
+                const safeTitle = escapeHtml(game.title);
+                const safeAuthor = escapeHtml(game.author || 'ครูผู้พัฒนาสื่อ');
+                const safeDesc = escapeHtml(game.description || '');
+                const fallbackImg = `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(game.title || 'NTM+EduGame')}`;
+                const coverSrc = game.imageUrl || game.image || fallbackImg;
+                const views = Number(game.views ?? game.plays ?? 0);
+
+                return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4">
+                            <div class="flex items-start gap-3">
+                                <img src="${coverSrc}" alt="${safeTitle}" onerror="this.onerror=null;this.src='${fallbackImg}';" class="w-14 h-9 rounded-lg object-cover border border-slate-200 shrink-0 mt-0.5">
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-xs">${safeTitle}</p>
+                                    <p class="text-[11px] text-slate-500 line-clamp-1">${safeDesc || '<span class="text-amber-600 italic">ยังไม่ได้ระบุคำอธิบายเกม (คลิกแก้ไขเพื่อเพิ่มได้)</span>'}</p>
+                                    <p class="text-[10px] text-slate-400 truncate mt-0.5">โดย: ${safeAuthor}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-3 px-3">
+                            <span class="inline-block px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-medium text-[11px]">${escapeHtml(game.subject)}</span>
+                            <span class="block text-[11px] text-slate-500 mt-0.5">${escapeHtml(game.grade)}</span>
+                        </td>
+                        <td class="py-3 px-3 text-center font-semibold text-slate-700">
+                            ${views.toLocaleString()}
+                        </td>
+                        <td class="py-3 px-4 text-right">
+                            <div class="inline-flex items-center gap-1.5">
+                                <button type="button" onclick="closeModal('sheetsModal'); requireDevAuth(() => openEditGameModal('${game.id}'))" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 font-medium text-xs flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล/คำอธิบาย
+                                </button>
+                                <button type="button" onclick="requireDevAuth(() => promptDeleteGame('${game.id}'))" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 font-medium text-xs flex items-center gap-1 transition">
+                                    <i class="fa-solid fa-trash-can"></i> ลบ
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
 
         /**
          * 1. ระบบเชื่อมต่อฐานข้อมูล Google Sheets + LocalStorage Fallback
@@ -1168,26 +1795,44 @@ function doPost(e) {
             renderGames();
 
             const scriptUrl = getScriptUrl();
-            if (scriptUrl && !id) {
+            if (scriptUrl) {
                 try {
+                    const actionType = id ? 'edit' : 'add';
                     await fetch(scriptUrl, {
                         method: 'POST',
                         mode: 'no-cors',
                         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        body: JSON.stringify({ action: 'add', game: gameObj })
+                        body: JSON.stringify({ action: actionType, game: gameObj })
                     });
-                    showToast('อัปโหลดเกมและบันทึกลง Google Sheets เรียบร้อยแล้ว!');
+                    showToast(id ? 'แก้ไขข้อมูลเกมและอัปเดตลง Google Sheets เรียบร้อยแล้ว!' : 'อัปโหลดเกมและบันทึกลง Google Sheets เรียบร้อยแล้ว!');
                 } catch (err) {
                     console.error(err);
                     showToast('บันทึกในเครื่องแล้ว แต่ส่งไป Google Sheets ไม่สำเร็จ', true);
                 }
             } else {
-                showToast('บันทึกข้อมูลเกมเรียบร้อยแล้ว!');
+                showToast(id ? 'บันทึกการแก้ไขข้อมูลเกมเรียบร้อยแล้ว!' : 'บันทึกข้อมูลเกมเรียบร้อยแล้ว!');
             }
 
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> <span>บันทึกข้อมูลเกม</span>`;
             closeModal('addGameModal');
+        }
+
+        function promptDeleteGame(gameId) {
+            const game = gamesList.find(g => String(g.id) === String(gameId));
+            if (!game) return;
+            pendingDeleteGameId = gameId;
+            const titleEl = document.getElementById('deleteConfirmTitle');
+            if (titleEl) titleEl.textContent = `"${game.title}"`;
+            openModal('deleteConfirmModal');
+        }
+
+        async function confirmDeleteGame() {
+            if (!pendingDeleteGameId) return;
+            const gameId = pendingDeleteGameId;
+            pendingDeleteGameId = null;
+            closeModal('deleteConfirmModal');
+            await deleteGame(gameId);
         }
 
         async function deleteGame(gameId) {
@@ -1217,6 +1862,7 @@ function doPost(e) {
         function renderGames() {
             const grid = document.getElementById('gamesGrid');
             const emptyState = document.getElementById('emptyState');
+            renderAdminGamesTable();
             if (!grid) return;
 
             const searchVal = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
@@ -1277,15 +1923,23 @@ function doPost(e) {
                 return `
                 <article class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-sm card-hover flex flex-col">
                     <!-- Cover Image Container -->
-                    <div class="aspect-video bg-slate-100 relative overflow-hidden group cursor-pointer" onclick="launchGameInApp('${game.id}')">
+                    <div class="aspect-video bg-slate-100 relative overflow-hidden group">
                         <img
                             src="${coverSrc}"
                             alt="${safeTitle}"
+                            onclick="launchGameInApp('${game.id}')"
                             onerror="this.onerror=null;this.src='${fallbackImg}';"
-                            class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                            class="w-full h-full object-cover group-hover:scale-105 transition duration-500 cursor-pointer"
                         >
+                        <!-- Play Overlay on Hover (pointer-events-none so it never blocks Edit/Delete buttons) -->
+                        <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center pointer-events-none z-10">
+                            <span class="px-4 py-2 rounded-xl bg-amber-400 text-slate-900 font-bold text-xs shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition">
+                                <i class="fa-solid fa-play"></i> เข้าเล่นเกม
+                            </span>
+                        </div>
+
                         <!-- Top Badges -->
-                        <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                        <div class="absolute top-3 left-3 flex flex-wrap gap-1.5 pointer-events-none z-20">
                             <span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-900/80 text-white backdrop-blur-sm">
                                 ${escapeHtml(game.subject)}
                             </span>
@@ -1294,21 +1948,14 @@ function doPost(e) {
                             </span>
                         </div>
 
-                        <!-- Edit/Delete Quick Actions -->
-                        <div class="absolute top-3 right-3 flex gap-1.5 opacity-0 group-hover:opacity-100 transition" onclick="event.stopPropagation()">
-                            <button onclick="openEditGameModal('${game.id}')" class="w-8 h-8 rounded-lg bg-white/90 hover:bg-white text-slate-700 flex items-center justify-center shadow" title="แก้ไขข้อมูลเกม">
+                        <!-- Edit/Delete Quick Actions (Protected by Developer PIN) -->
+                        <div class="absolute top-3 right-3 flex gap-1.5 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+                            <button type="button" onclick="event.stopPropagation(); requireDevAuth(() => openEditGameModal('${game.id}'))" class="w-8 h-8 rounded-lg bg-white/95 hover:bg-amber-400 text-slate-700 hover:text-slate-900 flex items-center justify-center shadow-md transition" title="แก้ไขข้อมูล/คำอธิบายเกม (เฉพาะผู้พัฒนา)">
                                 <i class="fa-solid fa-pen text-xs"></i>
                             </button>
-                            <button onclick="deleteGame('${game.id}')" class="w-8 h-8 rounded-lg bg-white/90 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center shadow transition" title="ลบเกม">
+                            <button type="button" onclick="event.stopPropagation(); requireDevAuth(() => promptDeleteGame('${game.id}'))" class="w-8 h-8 rounded-lg bg-white/95 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center shadow-md transition" title="ลบเกม (เฉพาะผู้พัฒนา)">
                                 <i class="fa-solid fa-trash text-xs"></i>
                             </button>
-                        </div>
-
-                        <!-- Play Overlay on Hover -->
-                        <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                            <span class="px-4 py-2 rounded-xl bg-amber-400 text-slate-900 font-bold text-xs shadow-lg flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition">
-                                <i class="fa-solid fa-play"></i> เข้าเล่นเกม
-                            </span>
                         </div>
                     </div>
 
@@ -1319,16 +1966,14 @@ function doPost(e) {
                                 <span><i class="fa-regular fa-calendar mr-1"></i>${escapeHtml(game.createdAt || '2026')}</span>
                                 <span><i class="fa-solid fa-eye text-indigo-500 mr-1"></i>เข้าเล่น ${viewCount.toLocaleString()} ครั้ง</span>
                             </div>
-                            <h3 class="font-display font-bold text-lg text-slate-900 leading-snug line-clamp-2">
+                            <h3 onclick="launchGameInApp('${game.id}')" class="font-display font-bold text-lg text-slate-900 hover:text-indigo-600 cursor-pointer leading-snug line-clamp-2 transition">
                                 ${safeTitle}
                             </h3>
-                            <p class="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                                ${safeDesc}
-                            </p>
+                            ${safeDesc ? `<p class="text-xs text-slate-600 leading-relaxed line-clamp-2">${safeDesc}</p>` : ''}
                         </div>
 
                         <div class="pt-3 border-t border-slate-100 space-y-3">
-                            <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center justify-between gap-2 text-xs">
                                 <span class="text-slate-500 truncate">
                                     <i class="fa-solid fa-user-pen text-indigo-500 mr-1"></i>${safeAuthor}
                                 </span>
@@ -1336,6 +1981,7 @@ function doPost(e) {
 
                             <!-- Single Play Button (Strictly labeled "เข้าเล่นเกม" without GitHub or source links) -->
                             <button
+                                type="button"
                                 onclick="launchGameInApp('${game.id}')"
                                 class="w-full py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-sm shadow-indigo-500/20 transition"
                             >
