@@ -117,10 +117,10 @@
 
     <!-- Top Navigation Bar (แถบบนของเว็บไซต์ ปรับสีพื้นหลัง สีตัวอักษร ฟอนต์ และอัปโหลดรูปโลโก้ใดก็ได้) -->
     <header id="mainHeaderBar" class="sticky top-0 z-30 backdrop-blur-md border-b border-slate-200/80 shadow-sm transition-colors duration-300" style="background-color: var(--theme-header-bg);">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
-            <!-- Brand Logo Slot ในแถบบน (รองรับการอัปโหลดรูปภาพทุกชนิด) -->
-            <div class="flex items-center gap-3 sm:gap-3.5">
-                <div class="w-14 h-16 sm:w-16 sm:h-[68px] flex items-center justify-center shrink-0 relative group">
+        <div class="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-3">
+            <!-- Brand Logo Slot ในแถบบน (รองรับการอัปโหลดรูปภาพทุกชนิด และไม่บีบซ้อนบนสมาร์ทโฟน) -->
+            <div class="flex items-center gap-2 sm:gap-3.5 min-w-0 flex-1">
+                <div class="w-11 h-12 sm:w-16 sm:h-[68px] flex items-center justify-center shrink-0 relative group">
                     <img
                         id="headerCustomLogo"
                         src=""
@@ -142,47 +142,48 @@
                     <!-- ช่องอัปโหลดรูปโลโก้ (แสดงเมื่อยังไม่มีไฟล์รูปโลโก้) -->
                     <label
                         id="headerLogoFallbackPicker"
-                        class="hidden w-full h-full rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-white/80 hover:bg-indigo-50 text-slate-700 flex-col items-center justify-center text-[10px] font-semibold cursor-pointer text-center leading-tight p-1 shadow-sm transition"
+                        class="hidden w-full h-full rounded-xl border-2 border-dashed border-slate-300 hover:border-indigo-500 bg-white/80 hover:bg-indigo-50 text-slate-700 flex-col items-center justify-center text-[9px] sm:text-[10px] font-semibold cursor-pointer text-center leading-tight p-1 shadow-sm transition"
                         title="คลิกเพื่ออัปโหลดรูปโลโก้ใส่ในแถบบน"
                     >
-                        <i class="fa-solid fa-image text-indigo-600 text-sm mb-0.5"></i>
+                        <i class="fa-solid fa-image text-indigo-600 text-xs sm:text-sm mb-0.5"></i>
                         <span>อัปโหลดรูป</span>
                         <input type="file" accept="image/*" onchange="handleLogoFileUpload(event)" class="hidden">
                     </label>
                 </div>
-                <div class="cursor-pointer" onclick="window.scrollTo({top:0, behavior:'smooth'})">
-                    <div class="flex items-center gap-2">
-                        <span id="headerBrandTitle" class="font-display font-bold text-lg sm:text-2xl tracking-tight leading-none" style="color: var(--theme-header-text);">
+                <div class="cursor-pointer min-w-0 flex-1" onclick="window.scrollTo({top:0, behavior:'smooth'})">
+                    <div class="flex items-center">
+                        <span id="headerBrandTitle" class="block font-display font-bold text-sm sm:text-2xl tracking-tight leading-tight sm:leading-none truncate" style="color: var(--theme-header-text);">
                             <span id="headerTitleMain">NTM</span> <span id="headerTitleHighlight" class="text-indigo-600">EduGame Hub</span>
                         </span>
                     </div>
-                    <p id="headerSubTitle" class="text-[11px] sm:text-xs font-medium mt-1" style="color: var(--theme-header-subtext);">โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)</p>
+                    <p id="headerSubTitle" class="text-[10px] sm:text-xs font-medium mt-0.5 sm:mt-1 truncate" style="color: var(--theme-header-subtext);">โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)</p>
                 </div>
             </div>
 
-            <!-- Action Buttons -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Action Buttons (ล็อกขนาดไม่ให้บีบทับชื่อเว็บในมุมมองสมาร์ทโฟน) -->
+            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 <!-- Refresh Data Button (Visible when connected to Google Sheets) -->
-                <button onclick="syncFromGoogleSheets()" id="syncBtn" class="hidden items-center justify-center w-9 h-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition" title="รีเฟรชรายการเกมล่าสุด">
-                    <i class="fa-solid fa-arrows-rotate" id="syncIcon"></i>
+                <button onclick="syncFromGoogleSheets()" id="syncBtn" class="hidden items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition shrink-0" title="รีเฟรชรายการเกมล่าสุด">
+                    <i class="fa-solid fa-arrows-rotate text-xs sm:text-sm" id="syncIcon"></i>
                 </button>
 
                 <!-- Lock Dev Mode Button (Visible when unlocked) -->
-                <button onclick="lockDevMode()" id="devUnlockedBadge" class="hidden items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 hover:bg-rose-50 text-emerald-700 hover:text-rose-600 border border-emerald-200 hover:border-rose-200 text-xs font-semibold transition" title="คลิกเพื่อล็อกโหมดผู้พัฒนา">
+                <button onclick="lockDevMode()" id="devUnlockedBadge" class="hidden items-center justify-center gap-1.5 w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-2 rounded-xl bg-emerald-50 hover:bg-rose-50 text-emerald-700 hover:text-rose-600 border border-emerald-200 hover:border-rose-200 text-xs font-semibold transition shrink-0" title="คลิกเพื่อล็อกโหมดผู้พัฒนา">
                     <i class="fa-solid fa-unlock-keyhole"></i>
-                    <span class="hidden md:inline">โหมดผู้พัฒนา (ล็อก)</span>
+                    <span class="hidden md:inline whitespace-nowrap">โหมดผู้พัฒนา (ล็อก)</span>
                 </button>
 
                 <!-- Backend Management & Theme Customization Button -->
-                <button onclick="requireDevAuth(() => openAdminModal('manage'))" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium transition" title="สำหรับผู้พัฒนา: แก้ไขเกม ตกแต่งเว็บไซต์ และตั้งค่าระบบ (ต้องใช้รหัสผ่าน)">
+                <button onclick="requireDevAuth(() => openAdminModal('manage'))" class="flex items-center justify-center gap-1.5 w-8 h-8 sm:w-auto sm:h-auto sm:px-3 sm:py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium transition shrink-0" title="สำหรับผู้พัฒนา: แก้ไขเกม ตกแต่งเว็บไซต์ และตั้งค่าระบบ (ต้องใช้รหัสผ่าน)">
                     <i class="fa-solid fa-sliders text-indigo-600"></i>
-                    <span class="hidden sm:inline">จัดการหลังบ้าน / ตกแต่งเว็บ</span>
+                    <span class="hidden sm:inline whitespace-nowrap">จัดการหลังบ้าน / ตกแต่งเว็บ</span>
                 </button>
 
                 <!-- Upload / Add Game Button -->
-                <button onclick="openAddGameModal()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-sm font-medium shadow-md shadow-indigo-600/20 transition">
+                <button onclick="openAddGameModal()" class="flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 py-2 sm:px-4 sm:py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs sm:text-sm font-medium shadow-md shadow-indigo-600/20 transition whitespace-nowrap shrink-0">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
-                    <span>+ อัปโหลดเกม</span>
+                    <span class="sm:hidden">+ อัปโหลด</span>
+                    <span class="hidden sm:inline">+ อัปโหลดเกม</span>
                 </button>
             </div>
         </div>
@@ -203,9 +204,9 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12 relative z-10">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div class="lg:col-span-7 space-y-4">
-                    <div class="flex items-center gap-4 sm:gap-5">
+                    <div class="flex items-center gap-3.5 sm:gap-5">
                         <!-- โลโก้ในแบนเนอร์หลัก (ซิงค์ตามรูปโลโก้ที่อัปโหลด หรือเลือกซ่อนได้) -->
-                        <div id="heroLogoWrapper" class="hidden w-24 h-28 sm:w-28 sm:h-32 shrink-0 flex items-center justify-center relative">
+                        <div id="heroLogoWrapper" class="hidden w-20 h-24 sm:w-28 sm:h-32 shrink-0 flex items-center justify-center relative">
                             <img
                                 id="heroCustomLogo"
                                 src=""
@@ -214,9 +215,9 @@
                                 style="filter: drop-shadow(0 0 2px rgba(255,255,255,0.95)) drop-shadow(0 0 6px rgba(255,255,255,0.75)) drop-shadow(0 6px 12px rgba(0,0,0,0.35));"
                             >
                         </div>
-                        <div>
+                        <div class="min-w-0">
                             <p id="heroSchoolText" class="text-xs sm:text-sm font-medium text-amber-300 tracking-wide">โรงเรียนวัดเนินตามาก (วิสุทธิธรรมวิมลวชิราราษฎร์)</p>
-                            <h1 id="heroHeadingContainer" class="font-display text-3xl sm:text-5xl font-bold leading-tight tracking-tight">
+                            <h1 id="heroHeadingContainer" class="font-display text-2xl sm:text-5xl font-bold leading-tight tracking-tight">
                                 <span id="heroTitleMain">NTM</span> <span id="heroTitleHighlight" class="text-amber-300">EduGame Hub</span>
                             </h1>
                         </div>
