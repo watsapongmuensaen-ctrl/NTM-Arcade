@@ -697,9 +697,9 @@
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div>
                                     <label class="block text-xs font-bold text-slate-800">
-                                        <i class="fa-solid fa-image text-indigo-600 mr-1"></i> รูปภาพบริเวณช่องโลโก้ (อัปโหลดรูปอื่นๆ ได้ตามต้องการ)
+                                        <i class="fa-solid fa-image text-indigo-600 mr-1"></i> รูปภาพบริเวณช่องโลโก้ (ซิงค์ออนไลน์แสดงผลทุกเครื่องอัตโนมัติ)
                                     </label>
-                                    <p class="text-[11px] text-slate-500">สามารถอัปโหลดรูปโลโก้ ตราประจำโรงเรียน รูปไอคอนเกม หรือวางลิงก์รูปภาพใดก็ได้</p>
+                                    <p class="text-[11px] text-slate-500">เมื่ออัปโหลดรูปโลโก้แล้ว ระบบจะบันทึกลงฐานข้อมูล Google Sheets เพื่อให้สมาร์ทโฟนและคอมเครื่องอื่นเห็นโลโก้เดียวกันทันที</p>
                                 </div>
                                 <div class="flex flex-wrap items-center gap-2">
                                     <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-lg" title="ติ๊กเลือกหากต้องการตัดพื้นหลังสีขาวรอบนอกออกอัตโนมัติ">
@@ -710,6 +710,9 @@
                                         <input type="checkbox" id="showHeroLogoCheckbox" checked onchange="previewCustomTheme()" class="rounded text-indigo-600 focus:ring-indigo-500">
                                         <span>แสดงโลโก้ในแบนเนอร์ด้วย</span>
                                     </label>
+                                    <button type="button" onclick="syncSiteConfigToGoogleSheets(false)" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition" title="ส่งรูปโลโก้และการตกแต่งปัจจุบันขึ้น Google Sheets เพื่อให้เครื่องอื่นเห็นทันที">
+                                        <i class="fa-solid fa-cloud-arrow-up mr-1"></i> ซิงค์โลโก้ขึ้นออนไลน์
+                                    </button>
                                     <button type="button" onclick="downloadHtmlWithEmbeddedLogo()" id="embedLogoHtmlBtn" class="hidden px-2.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition">
                                         <i class="fa-solid fa-file-code mr-1"></i> ดาวน์โหลด index.html (ฝังรูปนี้ถาวร)
                                     </button>
@@ -1783,11 +1786,34 @@ function doPost(e) {
 
         /**
          * ฟังก์ชันตัดพื้นหลังสีขาวออกจากรูปโลโก้ต้นฉบับด้วย Flood-Fill จากขอบภาพ
-         * รักษาดอกบัวสีขาวทั้ง 4 ดอกด้านในตรา และรักษาตัวหนังสือชื่อโรงเรียนโค้งด้านล่างไว้ครบถ้วน
+         * พร้อมบีบอัดขนาดให้ไม่เกินลิมิตของ Google Sheets เพื่อซิงค์แสดงผลทุกอุปกรณ์
          */
+        function compressCanvasForSheet(sourceCanvas) {
+            let quality = 0.86;
+            let dataUrl = sourceCanvas.toDataURL('image/webp', quality);
+            if (!dataUrl.startsWith('data:image/webp')) {
+                dataUrl = sourceCanvas.toDataURL('image/png');
+            }
+            let scale = 1.0;
+            while (dataUrl.length > 40000 && scale > 0.25) {
+                scale *= 0.82;
+                quality = Math.max(0.5, quality - 0.08);
+                const tmpCanvas = document.createElement('canvas');
+                tmpCanvas.width = Math.max(64, Math.round(sourceCanvas.width * scale));
+                tmpCanvas.height = Math.max(64, Math.round(sourceCanvas.height * scale));
+                const tmpCtx = tmpCanvas.getContext('2d');
+                tmpCtx.drawImage(sourceCanvas, 0, 0, tmpCanvas.width, tmpCanvas.height);
+                dataUrl = tmpCanvas.toDataURL('image/webp', quality);
+                if (!dataUrl.startsWith('data:image/webp')) {
+                    dataUrl = tmpCanvas.toDataURL('image/png');
+                }
+            }
+            return dataUrl;
+        }
+
         function removeWhiteBackgroundFromOriginalLogo(img, shouldRemoveBg = true) {
             const canvas = document.createElement('canvas');
-            const maxDim = 650;
+            const maxDim = 320;
             let width = img.naturalWidth || img.width;
             let height = img.naturalHeight || img.height;
 
@@ -1807,7 +1833,7 @@ function doPost(e) {
             ctx.drawImage(img, 0, 0, width, height);
 
             if (!shouldRemoveBg) {
-                return canvas.toDataURL('image/png');
+                return compressCanvasForSheet(canvas);
             }
 
             const imageData = ctx.getImageData(0, 0, width, height);
@@ -1879,7 +1905,7 @@ function doPost(e) {
             }
 
             ctx.putImageData(imageData, 0, 0);
-            return canvas.toDataURL('image/png');
+            return compressCanvasForSheet(canvas);
         }
 
         function handleLogoFileUpload(event) {
@@ -1889,7 +1915,7 @@ function doPost(e) {
             reader.onload = function(e) {
                 const rawDataUrl = e.target.result;
                 const img = new Image();
-                img.onload = function() {
+                img.onload = async function() {
                     const removeBg = document.getElementById('removeLogoBgCheckbox')
                         ? document.getElementById('removeLogoBgCheckbox').checked
                         : Boolean(siteTheme.removeLogoBg);
@@ -1905,7 +1931,8 @@ function doPost(e) {
                         localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
                     }
                     applyThemeToDOM(siteTheme);
-                    showToast('อัปโหลดเปลี่ยนรูปในช่องโลโก้เรียบร้อยแล้ว!');
+                    await syncSiteConfigToGoogleSheets(true);
+                    showToast('อัปโหลดและซิงค์รูปโลโก้ไปยังทุกอุปกรณ์เรียบร้อยแล้ว!');
                 };
                 img.src = rawDataUrl;
             };
@@ -1922,7 +1949,7 @@ function doPost(e) {
             applyThemeToDOM(siteTheme);
         }
 
-        function clearCustomLogo() {
+        async function clearCustomLogo() {
             siteTheme.logoImageData = '';
             siteTheme.logoRawData = '';
             siteTheme.logoHidden = true;
@@ -1930,6 +1957,7 @@ function doPost(e) {
             if (logoUrlInput) logoUrlInput.value = '';
             localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
             applyThemeToDOM(siteTheme);
+            await syncSiteConfigToGoogleSheets(true);
             showToast('ลบรูปโลโก้เรียบร้อยแล้ว สามารถอัปโหลดรูปใหม่ได้ทุกเมื่อ');
         }
 
@@ -1942,11 +1970,12 @@ function doPost(e) {
             if (!sourceData) return;
 
             const img = new Image();
-            img.onload = function() {
+            img.onload = async function() {
                 siteTheme.logoImageData = removeWhiteBackgroundFromOriginalLogo(img, removeBg);
                 localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
                 applyThemeToDOM(siteTheme);
-                showToast(removeBg ? 'ตัดพื้นหลังสีขาวของโลโก้ออกเรียบร้อยแล้ว' : 'แสดงพื้นหลังต้นฉบับของโลโก้แล้ว');
+                await syncSiteConfigToGoogleSheets(true);
+                showToast(removeBg ? 'ตัดพื้นหลังสีขาวและซิงค์โลโก้ออนไลน์แล้ว' : 'แสดงพื้นหลังต้นฉบับและซิงค์ออนไลน์แล้ว');
             };
             img.src = sourceData;
         }
@@ -2062,17 +2091,18 @@ function doPost(e) {
             showToast('ลบรูปพื้นหลังเรียบร้อยแล้ว');
         }
 
-        function saveSiteCustomization() {
+        async function saveSiteCustomization() {
             previewCustomTheme();
             localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
-            showToast('บันทึกการตกแต่งสี พื้นหลัง และข้อความเรียบร้อยแล้ว!');
+            await syncSiteConfigToGoogleSheets(false);
         }
 
-        function resetSiteCustomization() {
+        async function resetSiteCustomization() {
             siteTheme = { ...DEFAULT_SITE_THEME };
             localStorage.removeItem(STORAGE_THEME_KEY);
             populateThemeFormInputs();
             applyThemeToDOM(siteTheme);
+            await syncSiteConfigToGoogleSheets(true);
             showToast('คืนค่าการตกแต่งเริ่มต้นเรียบร้อยแล้ว');
         }
 
@@ -2104,8 +2134,6 @@ function doPost(e) {
             managePanel.classList.toggle('hidden', tab !== 'manage');
             themePanel.classList.toggle('hidden', tab !== 'theme');
             configPanel.classList.toggle('hidden', tab !== 'config');
-
-            if (tab === 'manage') renderAdminGamesTable();
         }
 
         function renderAdminGamesTable() {
@@ -2127,36 +2155,36 @@ function doPost(e) {
                 const safeTitle = escapeHtml(game.title);
                 const safeAuthor = escapeHtml(game.author || 'ครูผู้พัฒนาสื่อ');
                 const safeDesc = escapeHtml(game.description || '');
-                const fallbackImg = `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(game.title || 'NTM+EduGame')}`;
+                const fallbackImg = `https://placehold.co/160x90/4f46e5/ffffff?text=${encodeURIComponent(game.title || 'Game')}`;
                 const coverSrc = game.imageUrl || game.image || fallbackImg;
                 const views = Number(game.views ?? game.plays ?? 0);
 
                 return `
-                    <tr class="hover:bg-slate-50/80 transition">
+                    <tr class="hover:bg-slate-50 transition">
                         <td class="py-3 px-4">
-                            <div class="flex items-start gap-3">
-                                <img src="${coverSrc}" alt="${safeTitle}" onerror="this.onerror=null;this.src='${fallbackImg}';" class="w-14 h-9 rounded-lg object-cover border border-slate-200 shrink-0 mt-0.5">
+                            <div class="flex items-center gap-3">
+                                <img src="${coverSrc}" onerror="this.onerror=null;this.src='${fallbackImg}';" class="w-14 h-9 rounded-lg object-cover border border-slate-200 shrink-0" alt="${safeTitle}">
                                 <div class="min-w-0">
-                                    <p class="font-semibold text-slate-800 truncate max-w-[200px] sm:max-w-xs">${safeTitle}</p>
-                                    <p class="text-[11px] text-slate-500 line-clamp-1">${safeDesc || '<span class="text-amber-600 italic">ยังไม่ได้ระบุคำอธิบายเกม (คลิกแก้ไขเพื่อเพิ่มได้)</span>'}</p>
-                                    <p class="text-[10px] text-slate-400 truncate mt-0.5">โดย: ${safeAuthor}</p>
+                                    <p class="font-bold text-slate-800 truncate max-w-[240px] sm:max-w-xs">${safeTitle}</p>
+                                    <p class="text-[11px] text-slate-500 truncate max-w-[240px] sm:max-w-xs">${safeDesc ? safeDesc : '<span class="italic text-slate-400">ยังไม่ได้ใส่คำอธิบายเกม</span>'}</p>
+                                    <p class="text-[11px] text-indigo-600">ผู้พัฒนา: ${safeAuthor}</p>
                                 </div>
                             </div>
                         </td>
                         <td class="py-3 px-3">
-                            <span class="inline-block px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 font-medium text-[11px]">${escapeHtml(game.subject)}</span>
-                            <span class="block text-[11px] text-slate-500 mt-0.5">${escapeHtml(game.grade)}</span>
+                            <span class="inline-block px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">${escapeHtml(game.subject)}</span>
+                            <span class="inline-block px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-medium ml-1">${escapeHtml(game.grade)}</span>
                         </td>
                         <td class="py-3 px-3 text-center font-semibold text-slate-700">
                             ${views.toLocaleString()}
                         </td>
                         <td class="py-3 px-4 text-right">
                             <div class="inline-flex items-center gap-1.5">
-                                <button type="button" onclick="closeModal('sheetsModal'); requireDevAuth(() => openEditGameModal('${game.id}'))" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200/80 font-medium text-xs flex items-center gap-1 transition">
-                                    <i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล/คำอธิบาย
+                                <button type="button" onclick="closeModal('sheetsModal'); openEditGameModal('${game.id}');" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 font-medium transition">
+                                    <i class="fa-solid fa-pen-to-square mr-1"></i>แก้ไขข้อมูล/คำอธิบาย
                                 </button>
-                                <button type="button" onclick="requireDevAuth(() => promptDeleteGame('${game.id}'))" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200/80 font-medium text-xs flex items-center gap-1 transition">
-                                    <i class="fa-solid fa-trash-can"></i> ลบ
+                                <button type="button" onclick="promptDeleteGame('${game.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium transition">
+                                    <i class="fa-solid fa-trash-can mr-1"></i>ลบ
                                 </button>
                             </div>
                         </td>
@@ -2166,47 +2194,42 @@ function doPost(e) {
         }
 
         /**
-         * 1. ระบบเชื่อมต่อฐานข้อมูล Google Sheets + LocalStorage Fallback
+         * 1. ระบบเชื่อมต่อฐานข้อมูล (Google Sheets + LocalStorage Fallback)
          */
-        function cleanUrlString(rawUrl) {
-            return String(rawUrl || '').replace(/["'\s<>]/g, '').trim();
+        function cleanUrlString(url) {
+            return String(url || '').replace(/["'\s]+/g, '').trim();
         }
 
         function getScriptUrl() {
-            const stored = cleanUrlString(localStorage.getItem(STORAGE_SCRIPT_URL_KEY));
+            const saved = cleanUrlString(localStorage.getItem(STORAGE_SCRIPT_URL_KEY));
             const fallback = cleanUrlString(DEFAULT_GOOGLE_SCRIPT_URL);
-            return stored || fallback;
+            return saved || fallback;
         }
 
         function getCsvUrl() {
-            const stored = cleanUrlString(localStorage.getItem(STORAGE_CSV_URL_KEY));
+            const saved = cleanUrlString(localStorage.getItem(STORAGE_CSV_URL_KEY));
             const fallback = cleanUrlString(DEFAULT_GOOGLE_CSV_URL);
-            return stored || fallback;
+            return saved || fallback;
         }
 
-        function normalizeGameRecord(item) {
+        function normalizeGameRecord(raw) {
             return {
-                id: item.id || 'game-' + Date.now() + Math.random().toString(36).slice(2, 6),
-                title: item.title || 'ไม่มีชื่อเกม',
-                subject: item.subject || 'วิทยาศาสตร์และเทคโนโลยี',
-                grade: item.grade || 'ประถมศึกษา (ป.1-ป.6)',
-                description: item.description || '',
-                imageUrl: item.imageUrl || item.image || `https://placehold.co/800x450/4f46e5/ffffff?text=${encodeURIComponent(item.title || 'NTM+EduGame')}`,
-                playUrl: item.playUrl || item.gameUrl || '#',
-                author: item.author || 'ครูผู้พัฒนาสื่อ',
-                views: Number(item.views ?? item.plays ?? 0) || 0,
-                createdAt: item.createdAt ? String(item.createdAt).split('T')[0] : new Date().toISOString().split('T')[0]
+                id: String(raw.id || 'game_' + Date.now() + Math.random().toString(36).slice(2, 6)),
+                title: String(raw.title || 'เกมสื่อการเรียนรู้'),
+                subject: String(raw.subject || 'อื่นๆ'),
+                grade: String(raw.grade || 'ประถมศึกษา (ป.1-ป.6)'),
+                description: String(raw.description || ''),
+                imageUrl: String(raw.image || raw.imageUrl || ''),
+                playUrl: String(raw.gameUrl || raw.playUrl || '#'),
+                author: String(raw.author || 'ครูผู้พัฒนาสื่อ'),
+                views: Number(raw.views ?? raw.plays ?? 0),
+                createdAt: raw.createdAt ? String(raw.createdAt).split('T')[0] : new Date().toISOString().split('T')[0]
             };
         }
 
         async function initDatabaseConnection() {
             const scriptUrl = getScriptUrl();
             const csvUrl = getCsvUrl();
-
-            // ล้างค่า URL ใน LocalStorage หากเคยมีเครื่องหมายคำพูด (") ติดเข้าไป
-            if (localStorage.getItem(STORAGE_SCRIPT_URL_KEY)) {
-                localStorage.setItem(STORAGE_SCRIPT_URL_KEY, scriptUrl);
-            }
 
             const scriptInput = document.getElementById('scriptUrlInput');
             const csvInput = document.getElementById('csvUrlInput');
@@ -2216,15 +2239,17 @@ function doPost(e) {
             const savedLocal = localStorage.getItem(STORAGE_GAMES_KEY);
             if (savedLocal) {
                 try {
-                    const parsedLocal = JSON.parse(savedLocal);
-                    gamesList = Array.isArray(parsedLocal) && parsedLocal.length > 0
-                        ? parsedLocal.map(normalizeGameRecord)
-                        : SAMPLE_GAMES.map(normalizeGameRecord);
+                    const parsed = JSON.parse(savedLocal);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        gamesList = parsed.filter(item => String(item.id) !== SITE_CONFIG_ROW_ID).map(normalizeGameRecord);
+                    } else {
+                        gamesList = [...SAMPLE_GAMES];
+                    }
                 } catch (e) {
-                    gamesList = SAMPLE_GAMES.map(normalizeGameRecord);
+                    gamesList = [...SAMPLE_GAMES];
                 }
             } else {
-                gamesList = SAMPLE_GAMES.map(normalizeGameRecord);
+                gamesList = [...SAMPLE_GAMES];
                 localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
             }
 
@@ -2233,6 +2258,132 @@ function doPost(e) {
 
             if (scriptUrl || csvUrl) {
                 await syncFromGoogleSheets(true);
+            }
+        }
+
+        /**
+         * ซิงค์ข้อมูลรูปโลโก้และธีมตกแต่งเว็บไซต์ลงใน Google Sheets (แถวพิเศษ __SITE_CONFIG__)
+         * เพื่อให้สมาร์ทโฟนและคอมพิวเตอร์ทุกเครื่องที่เปิดลิงก์เห็นรูปโลโก้และการตกแต่งตรงกันทันที
+         */
+        const SITE_CONFIG_ROW_ID = '__SITE_CONFIG__';
+
+        async function ensureLogoFitsSheetLimit(logoData) {
+            if (!logoData || !logoData.startsWith('data:image/') || logoData.length <= 40000) {
+                return logoData || '';
+            }
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const compressed = removeWhiteBackgroundFromOriginalLogo(img, Boolean(siteTheme.removeLogoBg));
+                    resolve(compressed);
+                };
+                img.onerror = () => resolve('');
+                img.src = logoData;
+            });
+        }
+
+        async function syncSiteConfigToGoogleSheets(isSilent = false) {
+            const scriptUrl = getScriptUrl();
+            if (!scriptUrl) {
+                if (!isSilent) showToast('บันทึกการตกแต่งในเครื่องแล้ว (ยังไม่ได้เชื่อมต่อ Google Sheets)');
+                return;
+            }
+
+            try {
+                const safeLogoData = await ensureLogoFitsSheetLimit(siteTheme.logoImageData);
+                if (safeLogoData && safeLogoData !== siteTheme.logoImageData) {
+                    siteTheme.logoImageData = safeLogoData;
+                    try {
+                        localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+                    } catch (e) {}
+                }
+
+                const themeMeta = {
+                    bodyBgColor: siteTheme.bodyBgColor,
+                    heroColorStart: siteTheme.heroColorStart,
+                    heroColorEnd: siteTheme.heroColorEnd,
+                    primaryColor: siteTheme.primaryColor,
+                    headerBgColor: siteTheme.headerBgColor,
+                    headerTextColor: siteTheme.headerTextColor,
+                    heroTextColor: siteTheme.heroTextColor,
+                    heroHighlightColor: siteTheme.heroHighlightColor,
+                    fontFamily: siteTheme.fontFamily,
+                    removeLogoBg: siteTheme.removeLogoBg,
+                    showHeroLogo: siteTheme.showHeroLogo,
+                    logoHidden: siteTheme.logoHidden,
+                    bgTarget: siteTheme.bgTarget,
+                    heroTitleMain: siteTheme.heroTitleMain,
+                    heroTitleHighlight: siteTheme.heroTitleHighlight,
+                    schoolSubtitle: siteTheme.schoolSubtitle,
+                    heroDesc: siteTheme.heroDesc
+                };
+
+                const safeBgData = (siteTheme.bgImageData && siteTheme.bgImageData.length <= 40000)
+                    ? siteTheme.bgImageData
+                    : '';
+
+                const configRecord = {
+                    id: SITE_CONFIG_ROW_ID,
+                    title: SITE_CONFIG_ROW_ID,
+                    subject: 'SYSTEM_CONFIG',
+                    grade: 'SYSTEM',
+                    description: JSON.stringify(themeMeta),
+                    gameUrl: safeBgData,
+                    image: siteTheme.logoHidden ? '' : (safeLogoData || ''),
+                    author: 'SYSTEM',
+                    views: 0,
+                    createdAt: new Date().toISOString().split('T')[0]
+                };
+
+                // ลบแถวตั้งค่าเก่าก่อนแล้วเพิ่มแถวตั้งค่าใหม่ เพื่อให้รองรับสคริปต์ Google Sheets ทุกเวอร์ชัน
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'delete', id: SITE_CONFIG_ROW_ID })
+                });
+
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'add', game: configRecord })
+                });
+
+                if (!isSilent) {
+                    showToast('บันทึกโลโก้และการตกแต่งซิงค์ออนไลน์ทุกอุปกรณ์เรียบร้อยแล้ว!');
+                }
+            } catch (err) {
+                console.warn('Could not sync site config to Google Sheets:', err);
+                if (!isSilent) {
+                    showToast('บันทึกในเครื่องแล้ว แต่ซิงค์ขึ้น Google Sheets ไม่สำเร็จ', true);
+                }
+            }
+        }
+
+        function applyRemoteSiteConfigRow(configRow) {
+            if (!configRow) return;
+            try {
+                const parsedMeta = configRow.description ? JSON.parse(configRow.description) : {};
+                const remoteLogo = configRow.image || configRow.imageUrl || '';
+                const remoteBg = configRow.gameUrl || configRow.playUrl || '';
+
+                siteTheme = {
+                    ...DEFAULT_SITE_THEME,
+                    ...siteTheme,
+                    ...parsedMeta,
+                    logoImageData: parsedMeta.logoHidden ? '' : (remoteLogo || siteTheme.logoImageData || ''),
+                    bgImageData: remoteBg || siteTheme.bgImageData || ''
+                };
+
+                try {
+                    localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+                } catch (e) {}
+
+                populateThemeFormInputs();
+                applyThemeToDOM(siteTheme);
+            } catch (err) {
+                console.warn('Failed to parse remote site config:', err);
             }
         }
 
@@ -2285,13 +2436,25 @@ function doPost(e) {
                     }
 
                     if (json && json.status === 'success' && Array.isArray(json.data)) {
-                        if (json.data.length > 0) {
-                            gamesList = json.data.map(normalizeGameRecord);
+                        // แยกแถวตั้งค่าโลโก้/ธีมเว็บไซต์ (__SITE_CONFIG__) ออกจากรายการเกมปกติ
+                        const configRows = json.data.filter(item => String(item.id) === SITE_CONFIG_ROW_ID);
+                        const gameRows = json.data.filter(item => String(item.id) !== SITE_CONFIG_ROW_ID);
+
+                        if (configRows.length > 0) {
+                            // นำโลโก้และธีมที่บันทึกไว้ใน Google Sheets มาแสดงผลบนอุปกรณ์นี้ทันที
+                            applyRemoteSiteConfigRow(configRows[0]);
+                        } else if (siteTheme.logoImageData) {
+                            // กรณีเครื่องผู้พัฒนามีโลโก้อยู่แล้วแต่บน Google Sheets ยังไม่มี ให้ซิงค์ขึ้นอัตโนมัติ
+                            syncSiteConfigToGoogleSheets(true);
+                        }
+
+                        if (gameRows.length > 0) {
+                            gamesList = gameRows.map(normalizeGameRecord);
                             localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
                         }
                         renderGames();
                         if (!isSilentInit) {
-                            showToast(`ซิงค์ข้อมูลสำเร็จ (${json.data.length} เกมใน Google Sheets)`);
+                            showToast(`ซิงค์ข้อมูลและโลโก้สำเร็จ (${gameRows.length} เกมใน Google Sheets)`);
                         }
                     } else if (json && json.status === 'error') {
                         throw new Error(json.message || 'Google Script Error');
@@ -2301,10 +2464,17 @@ function doPost(e) {
                     const csvText = await res.text();
                     const parsed = parseCSVToGames(csvText);
                     if (parsed.length > 0) {
-                        gamesList = parsed.map(normalizeGameRecord);
-                        localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
+                        const configRows = parsed.filter(item => String(item.id) === SITE_CONFIG_ROW_ID);
+                        const gameRows = parsed.filter(item => String(item.id) !== SITE_CONFIG_ROW_ID);
+                        if (configRows.length > 0) {
+                            applyRemoteSiteConfigRow(configRows[0]);
+                        }
+                        if (gameRows.length > 0) {
+                            gamesList = gameRows.map(normalizeGameRecord);
+                            localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
+                        }
                         renderGames();
-                        if (!isSilentInit) showToast('ดึงข้อมูลเกมจาก Google Sheets CSV สำเร็จ');
+                        if (!isSilentInit) showToast('ดึงข้อมูลเกมและโลโก้จาก Google Sheets CSV สำเร็จ');
                     }
                 }
             } catch (err) {
