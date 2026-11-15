@@ -1371,6 +1371,7 @@ function doPost(e) {
             if (enteredPin === validPin) {
                 isDevUnlocked = true;
                 updateDevLockBadge();
+                renderGames();
                 closeModal('pinAuthModal');
                 showToast('ปลดล็อกโหมดผู้พัฒนาเรียบร้อยแล้ว');
                 if (typeof pendingAuthCallback === 'function') {
@@ -1386,6 +1387,7 @@ function doPost(e) {
         function lockDevMode() {
             isDevUnlocked = false;
             updateDevLockBadge();
+            renderGames();
             closeModal('sheetsModal');
             showToast('ล็อกโหมดผู้พัฒนาเรียบร้อยแล้ว');
         }
@@ -3016,8 +3018,8 @@ function doPost(e) {
                             </span>
                         </div>
 
-                        <!-- Edit/Delete Quick Actions (Protected by Developer PIN) -->
-                        <div class="absolute top-3 right-3 flex gap-1.5 z-20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+                        <!-- Edit/Delete Quick Actions (ซ่อนจากผู้เล่นทั่วไป และแสดงเฉพาะเมื่อปลดล็อกโหมดผู้พัฒนาแล้วเท่านั้น) -->
+                        <div class="absolute top-3 right-3 gap-1.5 z-20 ${isDevUnlocked ? 'flex opacity-100 sm:opacity-0 sm:group-hover:opacity-100' : 'hidden'} transition">
                             <button type="button" onclick="event.stopPropagation(); requireDevAuth(() => openEditGameModal('${game.id}'))" class="w-8 h-8 rounded-lg bg-white/95 hover:bg-amber-400 text-slate-700 hover:text-slate-900 flex items-center justify-center shadow-md transition" title="แก้ไขข้อมูล/คำอธิบายเกม (เฉพาะผู้พัฒนา)">
                                 <i class="fa-solid fa-pen text-xs"></i>
                             </button>
