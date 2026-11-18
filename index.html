@@ -281,7 +281,114 @@
     <!-- Main Content Container -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full space-y-6">
 
-        <!-- Search & Filter Bar -->
+        <!-- แถบแจ้งเตือนเฉพาะผู้พัฒนา เมื่อหมวดติว O-NET ถูกตั้งค่าซ่อนไว้ -->
+        <div id="onetDevHiddenBanner" class="hidden rounded-2xl p-4 sm:px-5 sm:py-4 bg-gradient-to-r from-amber-50 via-white to-emerald-50/60 border border-amber-300 shadow-sm flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5">
+            <div class="flex items-start sm:items-center gap-3.5 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-amber-100 border border-amber-300 text-amber-700 flex items-center justify-center shrink-0">
+                    <i class="fa-solid fa-eye-slash text-base"></i>
+                </div>
+                <div class="min-w-0 space-y-0.5">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <span class="font-display font-bold text-slate-900 text-xs sm:text-sm">หมวดติวสอบ O-NET (ชั้น ป.6) ถูกซ่อนจากหน้าจอผู้เรียน</span>
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200 text-slate-700 whitespace-nowrap shrink-0">
+                            <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> ซ่อนอยู่
+                        </span>
+                    </div>
+                    <p class="text-[11px] sm:text-xs text-slate-600 leading-relaxed">ข้อมูลลิงก์ข้อสอบทั้งหมดยังอยู่ครบถ้วน กดปุ่มสีเขียวเพื่อเปิดแสดงบนหน้าจอหลักได้ทันที</p>
+                </div>
+            </div>
+            <button
+                type="button"
+                onclick="requireDevAuth(() => toggleOnetSectionVisibility(true))"
+                class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/20 transition whitespace-nowrap shrink-0"
+            >
+                <i class="fa-solid fa-eye"></i>
+                <span>เปิดแสดงกรอบติว O-NET</span>
+            </button>
+        </div>
+
+        <!-- =====================================================================
+             TOP DEDICATED BOX: หมวดแบบทดสอบสำหรับการติวสอบ O-NET ชั้น ป.6 (แยกจากเกมทั่วไป)
+        ====================================================================== -->
+        <section id="onetTopSection" class="rounded-2xl p-4 sm:p-6 shadow-md border-2 border-amber-300/90 bg-gradient-to-br from-amber-50 via-white to-orange-50/70 relative overflow-hidden">
+            <!-- Decorative Accent -->
+            <div class="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-amber-300/20 blur-2xl pointer-events-none"></div>
+
+            <div class="relative z-10 space-y-4">
+                <!-- Header Row -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3.5">
+                    <div class="flex items-start sm:items-center gap-3">
+                        <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-lg sm:text-xl shadow-md shadow-amber-500/25 shrink-0">
+                            <i class="fa-solid fa-file-signature"></i>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-rose-600 text-white tracking-wide uppercase shadow-sm">
+                                    เฉพาะชั้น ป.6
+                                </span>
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-semibold bg-amber-200/80 text-amber-900">
+                                    ติวเข้มพิชิต O-NET
+                                </span>
+                            </div>
+                            <h2 class="font-display font-bold text-base sm:text-xl text-slate-900 mt-1 leading-snug">
+                                คลังแบบทดสอบและการติวสอบ O-NET (ระดับชั้นประถมศึกษาปีที่ 6)
+                            </h2>
+                            <p class="text-xs text-slate-600 mt-0.5">
+                                เลือกวิชาหรือหัวข้อด้านล่างเพื่อเข้าทำแบบทดสอบฝึกฝนเตรียมสอบ O-NET
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Filter & Developer Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-2 shrink-0 self-end sm:self-center">
+                        <select id="onetSubjectFilter" onchange="renderOnetSection()" class="px-3 py-2 rounded-xl bg-white border border-amber-300 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="ทั้งหมด">🎯 ทุกวิชา O-NET</option>
+                            <option value="คณิตศาสตร์">🔢 คณิตศาสตร์</option>
+                            <option value="ภาษาไทย">📖 ภาษาไทย</option>
+                            <option value="วิทยาศาสตร์">🧪 วิทยาศาสตร์</option>
+                            <option value="ภาษาอังกฤษ">🌐 ภาษาอังกฤษ</option>
+                            <option value="รวมทุกวิชา">📚 รวมทุกวิชา / ข้อสอบชุดรวม</option>
+                        </select>
+                        <button
+                            type="button"
+                            onclick="requireDevAuth(() => openAddOnetModal())"
+                            class="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition whitespace-nowrap"
+                            title="เพิ่มลิงก์แบบทดสอบติวสอบ O-NET (สำหรับผู้พัฒนา)"
+                        >
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>+ เพิ่มลิงก์ติว O-NET</span>
+                        </button>
+                        <button
+                            type="button"
+                            id="onetQuickHideBtn"
+                            onclick="requireDevAuth(() => toggleOnetSectionVisibility(false))"
+                            class="hidden px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-600 text-white font-semibold text-xs items-center gap-1.5 shadow-sm transition whitespace-nowrap"
+                            title="ซ่อนกรอบติว O-NET ชั่วคราวเมื่อไม่ใช่ช่วงติวสอบ"
+                        >
+                            <i class="fa-solid fa-eye-slash"></i>
+                            <span>ซ่อนกรอบ O-NET</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- O-NET Links Grid -->
+                <div id="onetItemsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                    <!-- Injected via renderOnetSection() -->
+                </div>
+
+                <!-- Empty State for O-NET Section -->
+                <div id="onetEmptyState" class="hidden bg-white/80 rounded-xl border border-dashed border-amber-300 p-5 text-center space-y-2">
+                    <p class="text-xs sm:text-sm font-semibold text-slate-700">
+                        <i class="fa-solid fa-book-open-reader text-amber-500 mr-1.5"></i>ยังไม่มีลิงก์แบบทดสอบติวสอบ O-NET ในหมวดวิชานี้
+                    </p>
+                    <p class="text-[11px] text-slate-500">
+                        คุณครูสามารถกดปุ่ม <strong>"+ เพิ่มลิงก์ติว O-NET"</strong> ด้านขวาบนเพื่อแปะลิงก์ข้อสอบหรือเว็บติวสอบสำหรับนักเรียนชั้น ป.6 ได้ทันที
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search & Filter Bar (สำหรับคลังเกมสื่อการเรียนรู้ทั่วไป) -->
         <div class="bg-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/80 space-y-4">
             <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
                 <!-- Search Input -->
@@ -536,6 +643,100 @@
     </div>
 
     <!-- =====================================================================
+         MODAL 1.5: เพิ่ม / แก้ไขลิงก์แบบทดสอบติวสอบ O-NET ป.6 (#onetModal)
+    ====================================================================== -->
+    <div id="onetModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-amber-200 overflow-hidden my-8 flex flex-col">
+            <!-- Header -->
+            <div class="px-6 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2.5">
+                    <i class="fa-solid fa-file-signature text-lg"></i>
+                    <div>
+                        <h2 id="onetModalTitle" class="font-display font-bold text-base sm:text-lg leading-tight">เพิ่มลิงก์แบบทดสอบติวสอบ O-NET (ป.6)</h2>
+                        <p class="text-[11px] text-amber-100">แสดงในกรอบติวสอบ O-NET ด้านบนสุดของเว็บไซต์ (แยกจากเกมทั่วไป)</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeModal('onetModal')" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Form -->
+            <form id="onetForm" onsubmit="handleOnetSubmit(event)" class="p-6 space-y-4 text-sm">
+                <input type="hidden" id="onetIdInput" value="">
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อชุดแบบทดสอบ / หัวข้อติว O-NET ป.6 <span class="text-rose-500">*</span></label>
+                    <input
+                        type="text"
+                        id="onetTitleInput"
+                        required
+                        placeholder="เช่น แบบทดสอบติวเข้ม O-NET คณิตศาสตร์ ป.6 ชุดที่ 1"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">รายวิชา O-NET (ชั้น ป.6) <span class="text-rose-500">*</span></label>
+                    <select id="onetSubjectInput" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white">
+                        <option value="คณิตศาสตร์">🔢 คณิตศาสตร์</option>
+                        <option value="ภาษาไทย">📖 ภาษาไทย</option>
+                        <option value="วิทยาศาสตร์">🧪 วิทยาศาสตร์</option>
+                        <option value="ภาษาอังกฤษ">🌐 ภาษาอังกฤษ</option>
+                        <option value="รวมทุกวิชา">📚 รวมทุกวิชา / คลังข้อสอบรวม</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-semibold text-slate-700">ลิงก์เข้าทำแบบทดสอบ / ลิงก์ติว O-NET <span class="text-rose-500">*</span></label>
+                        <button type="button" onclick="convertOnetRepoToPagesUrl()" class="text-[11px] text-amber-700 hover:text-amber-900 font-medium flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> แปลงลิงก์อัตโนมัติ
+                        </button>
+                    </div>
+                    <input
+                        type="url"
+                        id="onetUrlInput"
+                        required
+                        placeholder="วางลิงก์เว็บข้อสอบ, GitHub Pages, Google Forms, Quizizz ฯลฯ"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">คำอธิบายสั้นๆ / จำนวนข้อ <span class="text-slate-400 font-normal">(ไม่บังคับ)</span></label>
+                    <input
+                        type="text"
+                        id="onetDescInput"
+                        placeholder="เช่น แนวข้อสอบจริง 20 ข้อ พร้อมเฉลยละเอียด"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                    >
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1.5">ชื่อครูผู้จัดทำ / ผู้รวบรวม <span class="text-slate-400 font-normal">(ไม่บังคับ)</span></label>
+                    <input
+                        type="text"
+                        id="onetAuthorInput"
+                        placeholder="เช่น ครูวรรษพงษ์ หมื่นแสน"
+                        class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                    >
+                </div>
+
+                <div class="pt-3 border-t border-slate-200 flex items-center justify-end gap-2.5">
+                    <button type="button" onclick="closeModal('onetModal')" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-medium transition">
+                        ยกเลิก
+                    </button>
+                    <button type="submit" id="submitOnetBtn" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs sm:text-sm font-bold flex items-center gap-2 shadow-md shadow-amber-500/20 transition">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>บันทึกลิงก์ติว O-NET</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================================
          MODAL 2: หน้าต่างเล่นเกมในหน้าเว็บ (#playModal)
     ====================================================================== -->
     <div id="playModal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
@@ -625,10 +826,81 @@
                 </div>
 
                 <!-- TAB 1: จัดการรายการเกมหลังบ้าน (แก้ไข / ลบ / แก้คำอธิบาย) -->
-                <div id="adminPanelManage" class="space-y-4">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div id="adminPanelManage" class="space-y-5">
+                    <!-- แผงสวิตช์เปิด-ปิด และจัดการลิงก์หมวดติวสอบ O-NET ชั้น ป.6 (เชื่อม Google Sheets อัตโนมัติ) -->
+                    <div class="bg-gradient-to-r from-amber-50 via-orange-50/70 to-amber-50 border border-amber-200/90 rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+                        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                            <div class="flex items-start gap-3.5 min-w-0">
+                                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 text-white flex items-center justify-center text-lg shrink-0 shadow-md shadow-amber-500/20">
+                                    <i class="fa-solid fa-file-signature"></i>
+                                </div>
+                                <div class="min-w-0 flex-1 space-y-1">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h4 class="font-display font-bold text-slate-900 text-sm sm:text-base leading-snug">
+                                            การแสดงผลกรอบ "ติวสอบ O-NET ชั้น ป.6" บนหน้าจอหลัก
+                                        </h4>
+                                        <span id="adminOnetStatusBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap shrink-0">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                                            <span>กำลังเปิดแสดงผล</span>
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 leading-relaxed">
+                                        ลิงก์ข้อสอบ O-NET ทุกวิชาจะถูกบันทึกลงใน <strong>Google Sheets</strong> เดียวกับเว็บไซต์อัตโนมัติ (คอลัมน์ <code class="px-1 py-0.5 rounded bg-amber-100 text-amber-900">gameUrl</code>)
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2.5 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-amber-200/60">
+                                <button
+                                    type="button"
+                                    onclick="closeModal('sheetsModal'); openAddOnetModal();"
+                                    class="h-10 px-3.5 rounded-xl bg-white hover:bg-amber-100/80 text-amber-900 border border-amber-300 text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm transition whitespace-nowrap shrink-0"
+                                >
+                                    <i class="fa-solid fa-plus text-amber-600"></i>
+                                    <span>+ เพิ่มลิงก์ข้อสอบ O-NET</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    id="adminToggleOnetBtn"
+                                    onclick="toggleOnetSectionVisibility()"
+                                    class="h-10 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm transition whitespace-nowrap shrink-0"
+                                >
+                                    <i class="fa-solid fa-eye-slash"></i>
+                                    <span>ปิดซ่อนกรอบ O-NET</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- ตารางรายการลิงก์ข้อสอบ O-NET ป.6 ที่บันทึกอยู่ใน Google Sheets -->
+                        <div class="bg-white rounded-xl border border-amber-200/90 overflow-hidden">
+                            <div class="px-4 py-2.5 bg-amber-100/60 border-b border-amber-200/80 flex items-center justify-between gap-2">
+                                <span class="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-cloud-arrow-up text-amber-600"></i>
+                                    รายการลิงก์ข้อสอบติว O-NET ชั้น ป.6 (ซิงค์กับ Google Sheets)
+                                </span>
+                                <span id="adminOnetCountText" class="text-[11px] font-semibold text-amber-800">0 ชุดข้อสอบ</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 text-[11px]">
+                                            <th class="py-2.5 px-4 font-semibold">ชื่อชุดแบบทดสอบติว O-NET & ลิงก์ข้อสอบ</th>
+                                            <th class="py-2.5 px-3 font-semibold">รายวิชา</th>
+                                            <th class="py-2.5 px-3 font-semibold text-center">ยอดเข้าทำ</th>
+                                            <th class="py-2.5 px-4 font-semibold text-right">การจัดการ</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminOnetTableBody" class="divide-y divide-slate-200 text-xs">
+                                        <!-- Injected by renderAdminGamesTable() -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
                         <div>
-                            <h3 class="font-bold text-slate-800 text-sm">ตารางจัดการข้อมูลและคำอธิบายเกมทั้งหมด</h3>
+                            <h3 class="font-bold text-slate-800 text-sm">ตารางจัดการข้อมูลและคำอธิบายเกมสื่อการเรียนรู้ทั่วไป</h3>
                             <p class="text-xs text-slate-500">คลิกปุ่ม "แก้ไขข้อมูล/คำอธิบาย" เพื่อปรับแก้ชื่อเกม รูปหน้าปก ลิงก์ หรือเพิ่มคำอธิบายเกมได้ตลอดเวลา</p>
                         </div>
                     </div>
@@ -714,6 +986,10 @@
                                     <label class="inline-flex items-center gap-1.5 text-xs text-slate-700 font-medium cursor-pointer bg-slate-100 px-2.5 py-1.5 rounded-lg">
                                         <input type="checkbox" id="showHeroLogoCheckbox" checked onchange="previewCustomTheme()" class="rounded text-indigo-600 focus:ring-indigo-500">
                                         <span>แสดงโลโก้ในแบนเนอร์ด้วย</span>
+                                    </label>
+                                    <label class="inline-flex items-center gap-1.5 text-xs text-amber-900 font-semibold cursor-pointer bg-amber-100/80 border border-amber-300 px-2.5 py-1.5 rounded-lg">
+                                        <input type="checkbox" id="showOnetSectionCheckbox" checked onchange="previewCustomTheme()" class="rounded text-amber-600 focus:ring-amber-500">
+                                        <span>แสดงกรอบติวสอบ O-NET ป.6</span>
                                     </label>
                                     <button type="button" onclick="syncSiteConfigToGoogleSheets(false)" class="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium transition" title="ส่งรูปโลโก้และการตกแต่งปัจจุบันขึ้น Google Sheets เพื่อให้เครื่องอื่นเห็นทันที">
                                         <i class="fa-solid fa-cloud-arrow-up mr-1"></i> ซิงค์โลโก้ขึ้นออนไลน์
@@ -915,12 +1191,12 @@
                                 <i class="fa-solid fa-key text-amber-600"></i>
                                 เปลี่ยนรหัสผ่านสำหรับผู้พัฒนา (Developer PIN)
                             </h3>
-                            <p class="text-xs text-slate-600">รหัสผ่านเริ่มต้นคือ <strong>12345</strong> สามารถกำหนดรหัสผ่านใหม่เพื่อใช้ป้องกันก่อนการแก้ไขหรือลบข้อมูลได้</p>
+                            <p class="text-xs text-slate-600">สามารถกำหนดรหัสผ่านใหม่เพื่อใช้ป้องกันก่อนการแก้ไขหรือลบข้อมูลได้</p>
                         </div>
                         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่านปัจจุบัน</label>
-                                <input type="password" id="currentPinInput" placeholder="กรอกรหัสปัจจุบัน (เช่น 12345)" class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                <input type="password" id="currentPinInput" placeholder="กรอกรหัสผ่านปัจจุบัน" class="w-full px-3.5 py-2 rounded-xl bg-white border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">รหัสผ่านใหม่ที่ต้องการตั้ง</label>
@@ -1251,14 +1527,14 @@ function doPost(e) {
          */
         const DEFAULT_GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxDxWmmCBa3ttidrzSOGpyFiwQoDUZGvBhMSxNH4LFVXaD6cIGqv_htfxkz29xyLe8x/exec";
         const DEFAULT_GOOGLE_CSV_URL = "";    // ทางเลือกสำรอง: ลิงก์ CSV จากการ Publish to Web
-        const DEFAULT_DEV_PIN = "12345";      // รหัสผ่านผู้พัฒนาเริ่มต้น
+        const DEFAULT_DEV_PIN = "6015901023"; // รหัสผ่านผู้พัฒนาเริ่มต้น
         const DEFAULT_EMBEDDED_LOGO_DATA = ""; // ข้อมูลรูปโลโก้ฝังถาวรในโค้ดเมื่อกดดาวน์โหลด index.html
 
         // LocalStorage Keys
         const STORAGE_GAMES_KEY = 'ntm_edugame_hub_games_v1';
         const STORAGE_SCRIPT_URL_KEY = 'ntm_edugame_hub_script_url';
         const STORAGE_CSV_URL_KEY = 'ntm_edugame_hub_csv_url';
-        const STORAGE_PIN_KEY = 'ntm_edugame_hub_dev_pin_v1';
+        const STORAGE_PIN_KEY = 'ntm_edugame_hub_dev_pin_v2';
         const STORAGE_THEME_KEY = 'ntm_edugame_hub_theme_v1';
 
         const DEFAULT_SITE_THEME = {
@@ -1276,6 +1552,7 @@ function doPost(e) {
             logoRawData: '',
             removeLogoBg: false,
             showHeroLogo: true,
+            showOnetSection: true,
             logoHidden: false,
             bgTarget: 'hero',
             heroTitleMain: 'NTM',
@@ -1413,6 +1690,7 @@ function doPost(e) {
                     logoOverlay.classList.remove('flex');
                 }
             }
+            updateOnetVisibilityUI();
         }
 
         function handleHeaderLogoClick() {
@@ -1514,6 +1792,79 @@ function doPost(e) {
             if (removeBgCheckbox) removeBgCheckbox.checked = Boolean(siteTheme.removeLogoBg);
             const showHeroLogoCheckbox = document.getElementById('showHeroLogoCheckbox');
             if (showHeroLogoCheckbox) showHeroLogoCheckbox.checked = siteTheme.showHeroLogo !== false;
+            const showOnetCheckbox = document.getElementById('showOnetSectionCheckbox');
+            if (showOnetCheckbox) showOnetCheckbox.checked = siteTheme.showOnetSection !== false;
+        }
+
+        // ฟังก์ชันเปิด-ปิดการแสดงผลกรอบติวสอบ O-NET ชั้น ป.6 และซิงค์ไปยังทุกอุปกรณ์
+        async function toggleOnetSectionVisibility(forceState) {
+            const currentState = siteTheme.showOnetSection !== false;
+            const nextState = typeof forceState === 'boolean' ? forceState : !currentState;
+            siteTheme.showOnetSection = nextState;
+
+            const showOnetCheckbox = document.getElementById('showOnetSectionCheckbox');
+            if (showOnetCheckbox) showOnetCheckbox.checked = nextState;
+
+            try {
+                localStorage.setItem(STORAGE_THEME_KEY, JSON.stringify(siteTheme));
+            } catch (e) {}
+
+            updateOnetVisibilityUI();
+            await syncSiteConfigToGoogleSheets(true);
+            showToast(nextState ? 'เปิดแสดงกรอบติวสอบ O-NET ป.6 บนหน้าเว็บไซต์แล้ว' : 'ซ่อนกรอบติวสอบ O-NET ป.6 จากหน้าจอหลักเรียบร้อยแล้ว');
+        }
+
+        function updateOnetVisibilityUI() {
+            const isOnetVisible = siteTheme.showOnetSection !== false;
+            const onetSection = document.getElementById('onetTopSection');
+            const devHiddenBanner = document.getElementById('onetDevHiddenBanner');
+            const quickHideBtn = document.getElementById('onetQuickHideBtn');
+            const adminBadge = document.getElementById('adminOnetStatusBadge');
+            const adminToggleBtn = document.getElementById('adminToggleOnetBtn');
+
+            if (onetSection) {
+                onetSection.classList.toggle('hidden', !isOnetVisible);
+            }
+
+            if (devHiddenBanner) {
+                if (!isOnetVisible && isDevUnlocked) {
+                    devHiddenBanner.classList.remove('hidden');
+                    devHiddenBanner.classList.add('flex');
+                } else {
+                    devHiddenBanner.classList.add('hidden');
+                    devHiddenBanner.classList.remove('flex');
+                }
+            }
+
+            if (quickHideBtn) {
+                if (isDevUnlocked && isOnetVisible) {
+                    quickHideBtn.classList.remove('hidden');
+                    quickHideBtn.classList.add('flex');
+                } else {
+                    quickHideBtn.classList.add('hidden');
+                    quickHideBtn.classList.remove('flex');
+                }
+            }
+
+            if (adminBadge) {
+                if (isOnetVisible) {
+                    adminBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap shrink-0';
+                    adminBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-emerald-600"></span><span>กำลังเปิดแสดงผล</span>';
+                } else {
+                    adminBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-200 text-slate-700 border border-slate-300 whitespace-nowrap shrink-0';
+                    adminBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span><span>กำลังซ่อนจากหน้าเว็บ</span>';
+                }
+            }
+
+            if (adminToggleBtn) {
+                if (isOnetVisible) {
+                    adminToggleBtn.className = 'h-10 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm transition whitespace-nowrap shrink-0';
+                    adminToggleBtn.innerHTML = '<i class="fa-solid fa-eye-slash"></i><span>ปิดซ่อนกรอบ O-NET</span>';
+                } else {
+                    adminToggleBtn.className = 'h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 shadow-sm transition whitespace-nowrap shrink-0';
+                    adminToggleBtn.innerHTML = '<i class="fa-solid fa-eye"></i><span>เปิดแสดงกรอบ O-NET</span>';
+                }
+            }
         }
 
         // ฟังก์ชันคำนวณเฉดสีปุ่มกดเมื่อเอาเมาส์ชี้ (Hover) และสีพื้นหลังอ่อนอัตโนมัติ
@@ -1720,6 +2071,9 @@ function doPost(e) {
                     heroWrapper.classList.toggle('hidden', themeObj.showHeroLogo === false);
                 }
             }
+
+            // 8. การเปิด-ปิดแสดงผลกรอบติวสอบ O-NET ชั้น ป.6
+            updateOnetVisibilityUI();
         }
 
         function setAllLogoElementsSrc(srcData) {
@@ -2060,6 +2414,7 @@ function doPost(e) {
             const heroHighlightColor = document.getElementById('customHeroHighlightColor').value;
             const fontFamily = document.getElementById('customFontFamily').value;
             const showHeroLogoEl = document.getElementById('showHeroLogoCheckbox');
+            const showOnetEl = document.getElementById('showOnetSectionCheckbox');
 
             document.getElementById('customBodyBgText').value = bodyBg;
             document.getElementById('customHeroColorStartText').value = heroStart;
@@ -2080,6 +2435,7 @@ function doPost(e) {
             siteTheme.heroHighlightColor = heroHighlightColor;
             siteTheme.fontFamily = fontFamily;
             siteTheme.showHeroLogo = showHeroLogoEl ? showHeroLogoEl.checked : true;
+            siteTheme.showOnetSection = showOnetEl ? showOnetEl.checked : true;
             siteTheme.bgTarget = document.getElementById('customBgTarget').value;
             siteTheme.heroTitleMain = document.getElementById('customHeroTitleMain').value;
             siteTheme.heroTitleHighlight = document.getElementById('customHeroTitleHighlight').value;
@@ -2196,9 +2552,67 @@ function doPost(e) {
 
         function renderAdminGamesTable() {
             const tbody = document.getElementById('adminGamesTableBody');
-            if (!tbody) return;
+            const onetTbody = document.getElementById('adminOnetTableBody');
+            const onetCountEl = document.getElementById('adminOnetCountText');
 
-            if (gamesList.length === 0) {
+            // 1. ตารางจัดการลิงก์ข้อสอบ O-NET ชั้น ป.6
+            const onetItems = gamesList.filter(isOnetRecord);
+            if (onetCountEl) {
+                onetCountEl.textContent = `${onetItems.length} ชุดข้อสอบ`;
+            }
+            if (onetTbody) {
+                if (onetItems.length === 0) {
+                    onetTbody.innerHTML = `
+                        <tr>
+                            <td colspan="4" class="py-5 px-4 text-center text-slate-400 text-xs">
+                                ยังไม่มีลิงก์ข้อสอบ O-NET ป.6 กดปุ่ม <strong>"+ เพิ่มลิงก์ข้อสอบ O-NET"</strong> ด้านบนเพื่อเพิ่มและบันทึกลง Google Sheets
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    onetTbody.innerHTML = onetItems.map(item => {
+                        const safeTitle = escapeHtml(item.title);
+                        const safeDesc = escapeHtml(item.description || '');
+                        const safeUrl = escapeHtml(item.playUrl || item.gameUrl || '#');
+                        const cleanSub = escapeHtml(getOnetCleanSubject(item.subject));
+                        const views = Number(item.views ?? item.plays ?? 0);
+
+                        return `
+                            <tr class="hover:bg-amber-50/40 transition">
+                                <td class="py-2.5 px-4">
+                                    <p class="font-bold text-slate-800 truncate max-w-[220px] sm:max-w-xs">${safeTitle}</p>
+                                    ${safeDesc ? `<p class="text-[11px] text-slate-500 truncate max-w-[240px] sm:max-w-xs">${safeDesc}</p>` : ''}
+                                    <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-[11px] text-amber-700 hover:underline truncate block max-w-[240px] sm:max-w-xs">
+                                        <i class="fa-solid fa-link mr-1"></i>${safeUrl}
+                                    </a>
+                                </td>
+                                <td class="py-2.5 px-3 whitespace-nowrap">
+                                    <span class="inline-block px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-900 font-bold text-[11px]">O-NET ${cleanSub}</span>
+                                </td>
+                                <td class="py-2.5 px-3 text-center font-semibold text-slate-700 whitespace-nowrap">
+                                    ${views.toLocaleString()}
+                                </td>
+                                <td class="py-2.5 px-4 text-right whitespace-nowrap">
+                                    <div class="inline-flex items-center gap-1.5">
+                                        <button type="button" onclick="closeModal('sheetsModal'); openEditOnetModal('${item.id}');" class="px-2.5 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold transition">
+                                            <i class="fa-solid fa-pen-to-square mr-1"></i>แก้ไขลิงก์
+                                        </button>
+                                        <button type="button" onclick="promptDeleteGame('${item.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 font-semibold transition">
+                                            <i class="fa-solid fa-trash-can mr-1"></i>ลบ
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // 2. ตารางจัดการเกมสื่อการเรียนรู้ทั่วไป
+            if (!tbody) return;
+            const regularGames = gamesList.filter(g => !isOnetRecord(g));
+
+            if (regularGames.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="4" class="py-8 text-center text-slate-400">
@@ -2209,7 +2623,7 @@ function doPost(e) {
                 return;
             }
 
-            tbody.innerHTML = gamesList.map(game => {
+            tbody.innerHTML = regularGames.map(game => {
                 const safeTitle = escapeHtml(game.title);
                 const safeAuthor = escapeHtml(game.author || 'ครูผู้พัฒนาสื่อ');
                 const safeDesc = escapeHtml(game.description || '');
@@ -2223,8 +2637,8 @@ function doPost(e) {
                             <div class="flex items-center gap-3">
                                 <img src="${coverSrc}" onerror="this.onerror=null;this.src='${fallbackImg}';" class="w-14 h-9 rounded-lg object-cover border border-slate-200 shrink-0" alt="${safeTitle}">
                                 <div class="min-w-0">
-                                    <p class="font-bold text-slate-800 truncate max-w-[240px] sm:max-w-xs">${safeTitle}</p>
-                                    <p class="text-[11px] text-slate-500 truncate max-w-[240px] sm:max-w-xs">${safeDesc ? safeDesc : '<span class="italic text-slate-400">ยังไม่ได้ใส่คำอธิบายเกม</span>'}</p>
+                                    <p class="font-bold text-slate-800 truncate max-w-[200px] sm:max-w-xs">${safeTitle}</p>
+                                    <p class="text-[11px] text-slate-500 truncate max-w-[240px] sm:max-w-xs">${safeDesc ? safeDesc : '<span class="italic text-slate-400">ยังไม่ได้ใส่คำอธิบาย</span>'}</p>
                                     <p class="text-[11px] text-indigo-600">ผู้พัฒนา: ${safeAuthor}</p>
                                 </div>
                             </div>
@@ -2249,6 +2663,261 @@ function doPost(e) {
                     </tr>
                 `;
             }).join('');
+        }
+
+        /**
+         * ฟังก์ชันตรวจสอบและจัดการรายการแบบทดสอบติวสอบ O-NET ชั้น ป.6 (แยกจากเกมทั่วไป)
+         */
+        const ONET_SUBJECT_PREFIX = '[O-NET ป.6] ';
+
+        function isOnetRecord(item) {
+            if (!item) return false;
+            const sub = String(item.subject || '');
+            const grade = String(item.grade || '');
+            return sub.startsWith('[O-NET') || grade === 'ติวสอบ O-NET ป.6';
+        }
+
+        function getOnetCleanSubject(rawSubject) {
+            return String(rawSubject || '').replace(/^\[O-NET[^\]]*\]\s*/i, '').trim() || 'รวมทุกวิชา';
+        }
+
+        function openAddOnetModal() {
+            document.getElementById('onetModalTitle').textContent = 'เพิ่มลิงก์แบบทดสอบติวสอบ O-NET (ป.6)';
+            document.getElementById('onetForm').reset();
+            document.getElementById('onetIdInput').value = '';
+            openModal('onetModal');
+        }
+
+        function openEditOnetModal(itemId) {
+            const item = gamesList.find(g => String(g.id) === String(itemId));
+            if (!item) return;
+
+            document.getElementById('onetModalTitle').textContent = 'แก้ไขลิงก์แบบทดสอบติวสอบ O-NET (ป.6)';
+            document.getElementById('onetIdInput').value = item.id;
+            document.getElementById('onetTitleInput').value = item.title || '';
+            document.getElementById('onetSubjectInput').value = getOnetCleanSubject(item.subject);
+            document.getElementById('onetUrlInput').value = item.playUrl || item.gameUrl || '';
+            document.getElementById('onetDescInput').value = item.description || '';
+            document.getElementById('onetAuthorInput').value = item.author || '';
+            openModal('onetModal');
+        }
+
+        function convertOnetRepoToPagesUrl() {
+            const urlInput = document.getElementById('onetUrlInput');
+            const raw = urlInput.value.trim();
+            const match = raw.match(/github\.com\/([^\/]+)\/([^\/]+)/i);
+            if (match) {
+                const username = match[1];
+                const repoName = match[2].replace(/\.git$/i, '');
+                urlInput.value = `https://${username}.github.io/${repoName}/`;
+                showToast('แปลงเป็นลิงก์เว็บอัตโนมัติเรียบร้อยแล้ว');
+            } else {
+                showToast('ลิงก์นี้พร้อมใช้งานแล้ว');
+            }
+        }
+
+        async function handleOnetSubmit(event) {
+            event.preventDefault();
+            const submitBtn = document.getElementById('submitOnetBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>กำลังบันทึก...</span>`;
+
+            try {
+                const id = document.getElementById('onetIdInput').value;
+                const title = document.getElementById('onetTitleInput').value.trim();
+                const cleanSub = document.getElementById('onetSubjectInput').value;
+                const subject = `${ONET_SUBJECT_PREFIX}${cleanSub}`;
+                const grade = 'ติวสอบ O-NET ป.6';
+                const playUrl = document.getElementById('onetUrlInput').value.trim();
+                const description = document.getElementById('onetDescInput').value.trim();
+                const author = document.getElementById('onetAuthorInput').value.trim() || 'ครูผู้สอนชั้น ป.6';
+
+                const existingItem = id ? gamesList.find(g => String(g.id) === String(id)) : null;
+                const existingViews = existingItem ? (Number(existingItem.views) || 0) : 0;
+                const createdDate = existingItem?.createdAt || new Date().toISOString().split('T')[0];
+                const coverImg = `https://placehold.co/800x450/d97706/ffffff?text=${encodeURIComponent('O-NET ป.6 ' + cleanSub)}`;
+
+                const onetObj = {
+                    id: id || 'onet_' + Date.now(),
+                    title,
+                    subject,
+                    grade,
+                    description,
+                    imageUrl: coverImg,
+                    image: coverImg,
+                    playUrl,
+                    gameUrl: playUrl,
+                    author,
+                    views: existingViews,
+                    plays: existingViews,
+                    createdAt: createdDate
+                };
+
+                if (id) {
+                    const index = gamesList.findIndex(g => String(g.id) === String(id));
+                    if (index > -1) gamesList[index] = onetObj;
+                } else {
+                    gamesList.unshift(onetObj);
+                }
+
+                localStorage.setItem(STORAGE_GAMES_KEY, JSON.stringify(gamesList));
+                renderGames();
+
+                const scriptUrl = getScriptUrl();
+                if (scriptUrl) {
+                    const sheetGameRecord = {
+                        id: onetObj.id,
+                        title: onetObj.title,
+                        subject: onetObj.subject,
+                        grade: onetObj.grade,
+                        description: onetObj.description,
+                        gameUrl: onetObj.playUrl,
+                        image: coverImg,
+                        author: onetObj.author,
+                        views: onetObj.views,
+                        createdAt: onetObj.createdAt
+                    };
+
+                    // กรณีแก้ไขลิงก์เดิม ให้ลบแถวเก่าออกก่อนแล้วเพิ่มแถวใหม่ เพื่อให้รองรับสคริปต์ Google Sheets เดิมทุกเวอร์ชัน 100%
+                    if (id) {
+                        await fetch(scriptUrl, {
+                            method: 'POST',
+                            mode: 'no-cors',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({ action: 'delete', id: onetObj.id })
+                        });
+                    }
+
+                    await fetch(scriptUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                        body: JSON.stringify({ action: 'add', game: sheetGameRecord })
+                    });
+                    showToast(id ? 'แก้ไขลิงก์ติว O-NET ป.6 และอัปเดตลง Google Sheets แล้ว!' : 'เพิ่มลิงก์ติว O-NET ป.6 ลงใน Google Sheets เรียบร้อยแล้ว!');
+                } else {
+                    showToast('บันทึกลิงก์ติว O-NET ป.6 เรียบร้อยแล้ว!');
+                }
+
+                closeModal('onetModal');
+            } catch (err) {
+                console.error(err);
+                showToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล', true);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> <span>บันทึกลิงก์ติว O-NET</span>`;
+            }
+        }
+
+        function renderOnetSection() {
+            const grid = document.getElementById('onetItemsGrid');
+            const emptyState = document.getElementById('onetEmptyState');
+            if (!grid || !emptyState) return;
+
+            const filterSub = document.getElementById('onetSubjectFilter')?.value || 'ทั้งหมด';
+            const allOnetItems = gamesList.filter(isOnetRecord);
+
+            const filteredOnet = allOnetItems.filter(item => {
+                if (filterSub === 'ทั้งหมด') return true;
+                return getOnetCleanSubject(item.subject) === filterSub;
+            });
+
+            if (filteredOnet.length === 0) {
+                grid.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+
+            const subjectStyleMap = {
+                'คณิตศาสตร์': { badge: 'bg-blue-100 text-blue-800 border-blue-200', icon: 'fa-calculator text-blue-600' },
+                'ภาษาไทย': { badge: 'bg-amber-100 text-amber-900 border-amber-200', icon: 'fa-book-open text-amber-600' },
+                'วิทยาศาสตร์': { badge: 'bg-emerald-100 text-emerald-800 border-emerald-200', icon: 'fa-flask text-emerald-600' },
+                'ภาษาอังกฤษ': { badge: 'bg-purple-100 text-purple-800 border-purple-200', icon: 'fa-earth-americas text-purple-600' },
+                'รวมทุกวิชา': { badge: 'bg-rose-100 text-rose-800 border-rose-200', icon: 'fa-graduation-cap text-rose-600' }
+            };
+
+            grid.innerHTML = filteredOnet.map(item => {
+                const cleanSub = getOnetCleanSubject(item.subject);
+                const styleObj = subjectStyleMap[cleanSub] || subjectStyleMap['รวมทุกวิชา'];
+                const safeTitle = escapeHtml(item.title);
+                const safeDesc = escapeHtml(item.description || '');
+                const safeAuthor = escapeHtml(item.author || 'ครูผู้สอนชั้น ป.6');
+                const viewCount = Number(item.views ?? item.plays ?? 0);
+                const targetUrl = escapeHtml(item.playUrl || item.gameUrl || '#');
+
+                return `
+                    <div class="bg-white rounded-xl border border-amber-200/90 hover:border-amber-400 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between gap-3 relative group">
+                        <!-- ปุ่มแก้ไข/ลบ สำหรับผู้พัฒนาที่ปลดล็อกรหัสแล้วเท่านั้น -->
+                        <div class="absolute top-3 right-3 gap-1 z-20 ${isDevUnlocked ? 'flex' : 'hidden'}">
+                            <button type="button" onclick="event.stopPropagation(); requireDevAuth(() => openEditOnetModal('${item.id}'))" class="w-7 h-7 rounded-lg bg-amber-50 hover:bg-amber-400 text-slate-700 hover:text-slate-950 flex items-center justify-center border border-amber-200 transition" title="แก้ไขลิงก์ติว O-NET">
+                                <i class="fa-solid fa-pen text-[11px]"></i>
+                            </button>
+                            <button type="button" onclick="event.stopPropagation(); requireDevAuth(() => promptDeleteGame('${item.id}'))" class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white flex items-center justify-center border border-rose-200 transition" title="ลบลิงก์ติว O-NET">
+                                <i class="fa-solid fa-trash text-[11px]"></i>
+                            </button>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <div class="flex items-center justify-between gap-2 pr-14">
+                                <span class="px-2.5 py-0.5 rounded-lg text-[11px] font-bold border ${styleObj.badge} inline-flex items-center gap-1">
+                                    <i class="fa-solid ${styleObj.icon}"></i>
+                                    <span>O-NET ${escapeHtml(cleanSub)}</span>
+                                </span>
+                                <span class="text-[11px] text-slate-400">
+                                    <i class="fa-solid fa-user-check text-amber-500 mr-1"></i>${viewCount.toLocaleString()} ครั้ง
+                                </span>
+                            </div>
+                            <h3 onclick="launchOnetTest('${item.id}')" class="font-display font-bold text-sm sm:text-base text-slate-900 hover:text-amber-600 cursor-pointer leading-snug line-clamp-2 transition">
+                                ${safeTitle}
+                            </h3>
+                            ${safeDesc ? `<p class="text-xs text-slate-500 line-clamp-2">${safeDesc}</p>` : ''}
+                        </div>
+
+                        <div class="pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                            <span class="text-[11px] text-slate-500 truncate">
+                                <i class="fa-solid fa-chalkboard-user text-amber-600 mr-1"></i>${safeAuthor}
+                            </span>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button
+                                    type="button"
+                                    onclick="launchOnetTest('${item.id}')"
+                                    class="px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-sm transition"
+                                >
+                                    <i class="fa-solid fa-pen-clip"></i>
+                                    <span>เข้าทำแบบทดสอบ</span>
+                                </button>
+                                <a
+                                    href="${targetUrl}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onclick="incrementPlayCount('${item.id}')"
+                                    class="w-7 h-7 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-xs transition"
+                                    title="เปิดในแท็บใหม่"
+                                >
+                                    <i class="fa-solid fa-up-right-from-square"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function launchOnetTest(itemId) {
+            const item = gamesList.find(g => String(g.id) === String(itemId));
+            if (!item) return;
+
+            const targetUrl = item.playUrl || item.gameUrl || '#';
+            // หากเป็นลิงก์ Google Forms, Google Docs, Quizizz, Wordwall หรือ Canva ที่ไม่อนุญาตให้ฝัง iframe จะเปิดแท็บใหม่ให้อัตโนมัติ
+            const isExternalOnly = /forms\.gle|docs\.google\.com|quizizz\.com|wordwall\.net|canva\.com|kahoot\.it|zep\.us/i.test(targetUrl);
+            if (isExternalOnly) {
+                incrementPlayCount(itemId);
+                window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                return;
+            }
+            launchGameInApp(itemId);
         }
 
         /**
@@ -2368,6 +3037,7 @@ function doPost(e) {
                     fontFamily: siteTheme.fontFamily,
                     removeLogoBg: siteTheme.removeLogoBg,
                     showHeroLogo: siteTheme.showHeroLogo,
+                    showOnetSection: siteTheme.showOnetSection !== false,
                     logoHidden: siteTheme.logoHidden,
                     bgTarget: siteTheme.bgTarget,
                     heroTitleMain: siteTheme.heroTitleMain,
@@ -2844,30 +3514,35 @@ function doPost(e) {
 
                 const scriptUrl = getScriptUrl();
                 if (scriptUrl) {
-                    const actionType = id ? 'edit' : 'add';
-                    // ส่งข้อมูลไปที่ Google Sheets โดยไม่ซ้ำซ้อนคีย์รูปภาพเพื่อความรวดเร็ว
-                    const sheetPayload = {
-                        action: actionType,
-                        game: {
-                            id: gameObj.id,
-                            title: gameObj.title,
-                            subject: gameObj.subject,
-                            grade: gameObj.grade,
-                            description: gameObj.description,
-                            gameUrl: gameObj.playUrl,
-                            image: finalImage,
-                            author: gameObj.author,
-                            views: gameObj.views,
-                            createdAt: gameObj.createdAt
-                        }
+                    const sheetGameRecord = {
+                        id: gameObj.id,
+                        title: gameObj.title,
+                        subject: gameObj.subject,
+                        grade: gameObj.grade,
+                        description: gameObj.description,
+                        gameUrl: gameObj.playUrl,
+                        image: finalImage,
+                        author: gameObj.author,
+                        views: gameObj.views,
+                        createdAt: gameObj.createdAt
                     };
 
                     try {
+                        // กรณีแก้ไขข้อมูลเกมเดิม ให้ลบแถวเก่าออกก่อนแล้วบันทึกใหม่ เพื่อให้ทำงานร่วมกับสคริปต์ Google Sheets เดิมได้ทันที
+                        if (id) {
+                            await fetch(scriptUrl, {
+                                method: 'POST',
+                                mode: 'no-cors',
+                                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                                body: JSON.stringify({ action: 'delete', id: gameObj.id })
+                            });
+                        }
+
                         await fetch(scriptUrl, {
                             method: 'POST',
                             mode: 'no-cors',
                             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                            body: JSON.stringify(sheetPayload)
+                            body: JSON.stringify({ action: 'add', game: sheetGameRecord })
                         });
                         showToast(id ? 'แก้ไขข้อมูลเกมและอัปเดตลง Google Sheets เรียบร้อยแล้ว!' : 'อัปโหลดเกมและบันทึกลง Google Sheets เรียบร้อยแล้ว!');
                     } catch (err) {
@@ -2932,6 +3607,7 @@ function doPost(e) {
         function renderGames() {
             const grid = document.getElementById('gamesGrid');
             const emptyState = document.getElementById('emptyState');
+            renderOnetSection();
             renderAdminGamesTable();
             if (!grid) return;
 
@@ -2949,8 +3625,11 @@ function doPost(e) {
                 }
             });
 
+            // แยกรายการเกมปกติออกจากรายการติวสอบ O-NET ป.6 อย่างชัดเจน
+            const regularGamesList = gamesList.filter(game => !isOnetRecord(game));
+
             // Filter Games
-            let filtered = gamesList.filter(game => {
+            let filtered = regularGamesList.filter(game => {
                 const matchSearch = !searchVal ||
                     (game.title && game.title.toLowerCase().includes(searchVal)) ||
                     (game.description && game.description.toLowerCase().includes(searchVal)) ||
@@ -2971,7 +3650,7 @@ function doPost(e) {
             const totalPlays = gamesList.reduce((acc, item) => acc + (Number(item.views) || 0), 0);
             const statGamesEl = document.getElementById('statTotalGames');
             const statPlaysEl = document.getElementById('statTotalPlays');
-            if (statGamesEl) statGamesEl.textContent = gamesList.length.toLocaleString();
+            if (statGamesEl) statGamesEl.textContent = regularGamesList.length.toLocaleString();
             if (statPlaysEl) statPlaysEl.textContent = totalPlays.toLocaleString();
 
             if (filtered.length === 0) {
